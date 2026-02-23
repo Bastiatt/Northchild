@@ -151,8 +151,58 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
   };
 
   useEffect(() => {
-    // keyboard handler
-  }, [metaAdjustMode, metaSelected, hfPos, gsPos]);
+  const onKeyDown = (e: KeyboardEvent) => {
+    const k = e.key.toLowerCase();
+
+    // Toggle meta adjust mode
+    if (k === "m") {
+      setMetaAdjustMode((v) => !v);
+      return;
+    }
+
+    // Export positions
+    if (k === "e") {
+      if (!metaAdjustMode) return;
+      console.log("HF_POS =", JSON.stringify(hfPos, null, 2));
+      console.log("GS_POS =", JSON.stringify(gsPos, null, 2));
+      alert("HF/GS positions printed to console.");
+      return;
+    }
+
+    if (!metaAdjustMode) return;
+
+    const step = e.shiftKey ? 1 : 0.1;
+
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) {
+      e.preventDefault();
+
+      const bump = (setArr: any) => {
+        setArr((prev: { x: number; y: number }[]) => {
+          const next = prev.map((p) => ({ ...p }));
+          const idx = metaSelected.i;
+          let { x, y } = next[idx];
+
+          if (k === "arrowup") y -= step;
+          if (k === "arrowdown") y += step;
+          if (k === "arrowleft") x -= step;
+          if (k === "arrowright") x += step;
+
+          next[idx] = {
+            x: Math.max(0, Math.min(100, Number(x.toFixed(2)))),
+            y: Math.max(0, Math.min(100, Number(y.toFixed(2)))),
+          };
+          return next;
+        });
+      };
+
+      if (metaSelected.kind === "hf") bump(setHfPos);
+      else bump(setGsPos);
+    }
+  };
+
+  window.addEventListener("keydown", onKeyDown);
+  return () => window.removeEventListener("keydown", onKeyDown);
+}, [metaAdjustMode, metaSelected, hfPos, gsPos]);
 
   const renderRow = (key: AnimalKey) => {
     const count = animals[key];
