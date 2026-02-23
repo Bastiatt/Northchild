@@ -7,6 +7,8 @@ import {
   type NorthchildResult
 } from "./lib/northchildMechanics";
 
+declare const ClipboardItem: any;
+
 const maxPerAnimal = 4;
 const maxTotal = 15;
 
@@ -184,6 +186,41 @@ export default function Home() {
     setAnimals((prev) => ({ ...prev, [key]: prev[key] - 1 }));
   };
 
+  const copyResultToClipboard = async () => {
+  if (!computedResult) return;
+
+  try {
+    const src = getResultImagePath(computedResult.winner.id, computedResult.variant);
+
+    // Fetch the image as a blob
+    const res = await fetch(src, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
+
+    const blob = await res.blob();
+
+    // Write to clipboard as an image
+    // ClipboardItem is supported in Chromium and Safari 16+ in secure contexts.
+    // @ts-expect-error ClipboardItem typing can be missing depending on TS lib setup
+    const item = new ClipboardItem({ [blob.type]: blob });
+    await navigator.clipboard.write([item]);
+
+    // Optional: small UI state like "Copied!" if you want
+    console.log("Copied image to clipboard.");
+  } catch (err) {
+    console.error("Copy failed:", err);
+
+    // Fallback: copy the image URL instead
+    try {
+      const src = getResultImagePath(computedResult.winner.id, computedResult.variant);
+      await navigator.clipboard.writeText(window.location.origin + src);
+      console.log("Copied image link to clipboard as fallback.");
+    } catch (e2) {
+      console.error("Fallback copy link failed:", e2);
+      alert("Could not copy image. Try refreshing and using a different browser, or right-click the image and copy/save it.");
+    }
+  }
+};
+  
   const resetBuild = () => {
     setIsSealed(false);
     setFadePhase("none");
@@ -462,9 +499,8 @@ export default function Home() {
                     display: "block",
                   }}
                 />
-
                 <button
-                  onClick={resetBuild}
+                  onClick={copyResultToClipboard}
                   style={{
                     marginTop: 28,
                     padding: "12px 18px",
@@ -476,7 +512,7 @@ export default function Home() {
                     cursor: "pointer",
                   }}
                 >
-                  New Build
+                  Copy Result
                 </button>
               </>
             )}
