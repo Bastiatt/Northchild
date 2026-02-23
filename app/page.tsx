@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const maxPerAnimal = 4;
 const maxTotal = 15;
@@ -93,9 +93,7 @@ export default function Home() {
   const [gsCount, setGsCount] = useState(0);
 
   const [metaAdjustMode, setMetaAdjustMode] = useState(false);
-const [metaSelected, setMetaSelected] = useState<MetaSel>({ kind: "hf", i: 0 });
-
-
+  const [metaSelected, setMetaSelected] = useState<MetaSel>({ kind: "hf", i: 0 });
 
 // Starting guesses. You will nudge these onto the printed arc marks.
 const [hfPos, setHfPos] = useState<{ x: number; y: number }[]>([
@@ -151,6 +149,10 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
       setFadePhase("showResult");
     }, 1900);
   };
+
+  useEffect(() => {
+    // keyboard handler
+  }, [metaAdjustMode, metaSelected, hfPos, gsPos]);
 
   const renderRow = (key: AnimalKey) => {
     const count = animals[key];
