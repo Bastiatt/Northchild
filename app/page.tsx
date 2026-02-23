@@ -130,6 +130,7 @@ const resetBuild = () => {
   setFadePhase("none");
   setComputedResult(null);
   setSubmittedBuild(null); // if you have this state
+  setResultImgReady(false);
   setHfCount(0);
   setGsCount(0);
   setAnimals({
@@ -200,25 +201,25 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
     try {
       // 1) Compute first (no state changes yet)
       const result = computeNorthchildResult(animals, hfCount, gsCount);
+      if (!result.isValid) return;
 
-      // 2) If invalid, do NOT seal. Just log and exit.
-      if (!result.isValid) {
-        console.warn("Invalid build:", result.errors);
-        return;
-      }
-
-      // 3) Persist the result, then seal, then fade
       setComputedResult(result);
       setIsSealed(true);
+      setResultImgReady(false);
 
+      // start fade to black
       setFadePhase("toBlack");
-      window.setTimeout(() => {
+
+      // preload the image while black is happening
+      const src = getResultImagePath(result.winner.id, result.variant);
+      const img = new Image();
+      img.src = src;
+
+      img.onload = () => {
+        setResultImgReady(true);
+        // once the image is ready, reveal phase
         setFadePhase("showResult");
-      }, 700);
-    } catch (err) {
-      console.error("sealFate failed:", err);
-    }
-  };
+      };
 
   useEffect(() => {
   const onKeyDown = (e: KeyboardEvent) => {
@@ -420,14 +421,14 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
             top: "54.3%",
             transform: "translate(-50%, -50%)",
             fontFamily: "var(--font-viking)",
-            fontSize: 15.0,
+            fontSize: 15,
             letterSpacing: "0.05em",
             color: "#415662",
             textAlign: "center",
             lineHeight: 1.5,
             userSelect: "none",
             pointerEvents: "none",
-        }}
+             }}
 >
   <div>Fifteen spirits to name her fate</div>
 
@@ -437,72 +438,100 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
   </div>
 </div>
 
-        {/* Bottom seal button */}
-        <button
-          onClick={() => {
-          console.log("CLICKED");
-          sealFate();
-          }}
-          style={{
-            position: "absolute",
-            left: "50%",
-            top: "95.6%",                // your tuned position
-            transform: "translate(-50%, -50%)",
-            background: "none",
-            border: "none",
-            padding: 0,
-            cursor: isAnimalQuotaMet ? "pointer" : "default",
-            opacity: isAnimalQuotaMet ? 1 : 0.15,
-            transition: "opacity 0.2s ease",
-          }}
-          aria-label="And thus the North shall know its child"
-        >
-          <img
-            src="/ui/button-invoke.png"
-            alt=""
-            style={{
-              display: "block",
-              width: 450,              // set to your designed pixel width
-              height: "auto",
-              pointerEvents: "none",
-              userSelect: "none",
-            }}
-          />
-        </button>
+     {/* Bottom seal button */}
+<button
+  onClick={() => {
+    console.log("CLICKED");
+    sealFate();
+  }}
+  style={{
+    position: "absolute",
+    left: "50%",
+    top: "95.6%",
+    transform: "translate(-50%, -50%)",
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: isAnimalQuotaMet ? "pointer" : "default",
+    opacity: isAnimalQuotaMet ? 1 : 0.15,
+    transition: "opacity 0.2s ease",
+    pointerEvents: isSealed ? "none" : "auto",
+  }}
+  aria-label="And thus the North shall know its child"
+>
+  <img
+    src="/ui/button-invoke.png"
+    alt=""
+    style={{
+      width: 415,      // tweak this number
+      height: "auto",
+      display: "block",
+    }}
+  />
+</button>
 
-        {fadePhase === "showResult" && computedResult && (
-          <div style={{ textAlign: "center" }}>
+{/* Fade overlay (black) */}
+  <div
+    style={{
+      position: "absolute",
+      inset: 0,
+      background: "black",
+      opacity:
+        fadePhase === "none"
+          ? 0
+          : 1,
+      transition: "opacity 2.2s ease",
+      zIndex: 50,
+      pointerEvents: fadePhase === "none" ? "none" : "auto",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}
+  >
+    const [resultImgReady, setResultImgReady] = useState(false);
+    
+    {fadePhase === "showResult" && computedResult && (
+      <div
+        style={{
+          textAlign: "center",
+          opacity: fadePhase === "showResult" && resultImgReady ? 1 : 0,
+          transition: "opacity 2.2s ease",
+          pointerEvents: fadePhase === "showResult" ? "auto" : "none",
+        }}
+      >
+        {computedResult && (
+          <>
             <img
-              src={getResultImagePath(
-                computedResult.winner.id,
-                computedResult.variant
-              )}
-              alt={computedResult.winner.displayName}
+              src={getResultImagePath(computedResult.winner.id, computedResult.variant)}
+              alt=""
               style={{
-                maxWidth: "100%",
+                maxWidth: "92%",
                 height: "auto",
                 borderRadius: 12,
+                display: "block",
               }}
             />
 
-            <button
-              onClick={resetBuild}
-              style={{
-                marginTop: 28,
-                padding: "12px 18px",
-                fontSize: 16,
-                borderRadius: 10,
-                border: "1px solid rgba(255,255,255,0.25)",
-                background: "rgba(255,255,255,0.10)",
-                color: "white",
-                cursor: "pointer",
-              }}
-            >
-              New Build
-            </button>
-          </div>
-        )}
+        <button
+          onClick={resetBuild}
+          style={{
+            marginTop: 28,
+            padding: "12px 18px",
+            fontSize: 16,
+            borderRadius: 10,
+            border: "1px solid rgba(255,255,255,0.25)",
+            background: "rgba(255,255,255,0.10)",
+            color: "white",
+            cursor: "pointer",
+          }}
+        >
+          New Build
+        </button>
       </div>
-    </div>
-  );
+    )}
+  </div>
+
+  </div>
+</div>
+);
 }
