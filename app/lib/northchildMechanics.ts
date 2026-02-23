@@ -257,5 +257,5 @@ export function getResultImagePath(id: number, variant: FateVariant) {
   const folder =
     variant === "HF" ? "highflame" : variant === "GS" ? "gravesong" : "base";
 
-  return `/results/${folder}/${padded}.png`;
+  return `/results/${folder}/${padded}.webp`;
 }
