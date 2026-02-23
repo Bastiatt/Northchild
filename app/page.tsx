@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { computeNorthchildResult, type NorthchildResult } from "./lib/northchildMechanics";
 
 const maxPerAnimal = 4;
 const maxTotal = 15;
@@ -86,6 +87,7 @@ function Pip({ active, rune, size = 28 }: { active: boolean; rune: string; size?
 }
 
 export default function Home() {
+  
   const [animals, setAnimals] = useState<Record<AnimalKey, number>>({
     wolf: 0,
     orca: 0,
@@ -114,6 +116,22 @@ export default function Home() {
   13: "Thirteen",
   14: "Fourteen",
   15: "Fifteen",
+};
+
+// state hooks should live together
+const [computedResult, setComputedResult] = useState<NorthchildResult | null>(null);
+
+const resetBuild = () => {
+  setIsSealed(false);
+  setFadePhase("none");
+  setComputedResult(null);
+  setSubmittedBuild(null); // if you have this state
+  setHfCount(0);
+  setGsCount(0);
+  setAnimals({
+    wolf: 0, orca: 0, serpent: 0, raven: 0,
+    owl: 0, eagle: 0, elk: 0, bear: 0,
+  });
 };
 
 const toWord = (n: number) => numberWords[n] ?? String(n);
@@ -175,12 +193,19 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
   const sealFate = () => {
     if (!isAnimalQuotaMet) return;
     if (isSealed) return;
-
+  
     const snapshot: BuildSnapshot = {
       animals: { ...animals },
       hf: hfCount,
       gs: gsCount,
     };
+
+   const result = computeNorthchildResult(animals, hfCount, gsCount);
+    if (!result.isValid) {
+      // optional: show error, or just return without sealing
+      return;
+    }
+    setComputedResult(result);
 
     setSubmittedBuild(snapshot);   // freeze the ledger entry
     setIsSealed(true);
@@ -440,56 +465,49 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
           />
         </button>
 
-        {/* Fade overlay */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundColor: "#000",
-            opacity: fadePhase === "toBlack" ? 1 : 0,
-            transition: "opacity 0.7s ease",
-            pointerEvents: fadePhase === "none" ? "none" : "auto",
-          }}
-        />
+        {fadePhase !== "none" && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: fadePhase === "toBlack" ? "rgba(0,0,0,1)" : "rgba(0,0,0,0.92)",
+              transition: "background 0.6s ease",
+              zIndex: 9999,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 24,
+            }}
+          >
+            {fadePhase === "showResult" && computedResult !== null && (
+              <div style={{ textAlign: "center", maxWidth: 720, color: "white" }}>
+                <div style={{ fontSize: 44, fontWeight: 700, letterSpacing: 0.5 }}>
+                {computedResult.winner.displayName}
+              </div>
 
-        {/* Placeholder result reveal */}
-        {fadePhase === "showResult" && (
-  <div
-    style={{
-      position: "absolute",
-      inset: 0,
-      backgroundColor: "rgba(0,0,0,1)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "var(--font-viking)",
-      color: "rgba(255,255,255,0.92)",
-      textAlign: "center",
-      whiteSpace: "pre-wrap",
-      lineHeight: 1.6,
-    }}
-  >
-    <div>
-      <div style={{ fontSize: 28, letterSpacing: "0.08em" }}>
-        Ledger received
-      </div>
+              <div style={{ marginTop: 10, fontSize: 16, opacity: 0.9 }}>
+                Runner-up: {computedResult.runnerUp.displayName}
+              </div>
 
-      <div style={{ marginTop: 18, fontSize: 18, letterSpacing: "0.04em" }}>
-        {submittedBuild ? (
-          <>
-            {Object.entries(submittedBuild.animals)
-              .map(([k, v]) => `${k}: ${v}`)
-              .join("   ")}
-            {"\n"}
-            HF: {submittedBuild.hf}   GS: {submittedBuild.gs}
-          </>
-        ) : (
-          "No submission captured."
+                <button
+                  onClick={resetBuild}
+                  style={{
+                    marginTop: 28,
+                    padding: "12px 18px",
+                    fontSize: 16,
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.25)",
+                    background: "rgba(255,255,255,0.10)",
+                    color: "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  New Build
+                </button>
+              </div>
+            )}
+          </div>
         )}
-      </div>
-    </div>
-  </div>
-)}
       </div>
     </div>
   );
