@@ -284,6 +284,10 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
         {/* Animal rows */}
         {animalOrder.map((k) => renderRow(k))}
 
+        {/* HF / GS pips (temporary vertical stack) */}
+        {renderStack("hf", 89.5, 33.5, hfCount, setHfCount)}    
+        {renderStack("gs", 89.5, 73.0, gsCount, setGsCount)}
+
         {/* Center counter (temporary; your art already contains this) */}
         <div
           style={{
