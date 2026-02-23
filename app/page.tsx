@@ -47,12 +47,12 @@ const layout: Record<AnimalKey, { x: number; y: number }> = {
   bear: { x: 37, y: 27.5 },
 };
 
-function Pip({ active, rune }: { active: boolean; rune: string }) {
+function Pip({ active, rune, size = 28 }: { active: boolean; rune: string; size?: number }) {
   return (
     <div
       style={{
-        width: 28,
-        height: 28,
+        width: size,
+        height: size,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -97,19 +97,19 @@ export default function Home() {
 
 // Starting guesses. You will nudge these onto the printed arc marks.
 const [hfPos, setHfPos] = useState<{ x: number; y: number }[]>([
-  { x: 86.0, y: 36.0 },
-  { x: 88.0, y: 38.0 },
-  { x: 89.5, y: 41.0 },
-  { x: 88.0, y: 44.0 },
-  { x: 86.0, y: 46.0 },
+  { x: 93.6, y: 22.6 },
+  { x: 96.1, y: 28.0 },
+  { x: 97.6, y: 34.0 },
+  { x: 96.2, y: 39.4 },
+  { x: 93.7, y: 44.4 },
 ]);
 
 const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
-  { x: 86.0, y: 63.0 },
-  { x: 88.0, y: 65.0 },
-  { x: 89.5, y: 68.0 },
-  { x: 88.0, y: 71.0 },
-  { x: 86.0, y: 73.0 },
+  { x: 86.1, y: 67.1 },
+  { x: 83.6, y: 72.6 },
+  { x: 82.2, y: 78.2 },
+  { x: 83.7, y: 83.9 },
+  { x: 86.1, y: 89.0 },
 ]);
 
   const [isSealed, setIsSealed] = useState(false);
@@ -235,54 +235,39 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
     );
   };
 
-  const renderStack = (
-    kind: "hf" | "gs",
-    x: number,
-    y: number,
-    count: number,
-    setCount: (n: number) => void
-  ) => {
-    const max = 5;
-
-    const inc = () => {
-      if (isSealed) return;
-      if (count >= max) return;
-      setCount(count + 1);
-    };
-
-    const dec = () => {
-      if (isSealed) return;
-      if (count <= 0) return;
-      setCount(count - 1);
-    };
-
+  const renderStack = (kind: "hf" | "gs") => {
+    const coords = kind === "hf" ? hfPos : gsPos;
+    const count = kind === "hf" ? hfCount : gsCount;
+    const setCount = kind === "hf" ? setHfCount : setGsCount;
     const rune = kind === "hf" ? metaRuneFile.hf : metaRuneFile.gs;
 
-    return (
+    return coords.map((pos, i) => (
       <div
-        onClick={inc}
-        onContextMenu={(e) => {
-          e.preventDefault();
-          dec();
+        key={`${kind}-${i}`}
+        onClick={() => {
+          if (isSealed) return;
+          // Toggle logic: click the current max to decrease, click higher to increase
+          setCount(i + 1 === count ? i : i + 1);
         }}
-        title={kind === "hf" ? "High Flames" : "Grave Songs"}
+        onMouseEnter={() => {
+          if (metaAdjustMode) setMetaSelected({ kind, i: i as MetaIndex });
+        }}
         style={{
           position: "absolute",
-          left: `${x}%`,
-          top: `${y}%`,
+          left: `${pos.x}%`,
+          top: `${pos.y}%`,
           transform: "translate(-50%, -50%)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
           cursor: "pointer",
-          userSelect: "none",
+          zIndex: metaAdjustMode && metaSelected.kind === kind && metaSelected.i === i ? 10 : 1,
+          outline: metaAdjustMode && metaSelected.kind === kind && metaSelected.i === i 
+            ? "2px solid cyan" 
+            : "none",
         }}
       >
-        {[0, 1, 2, 3, 4].map((i) => (
-          <Pip key={i} active={i < count} rune={rune} />
-        ))}
+        <Pip active={i < count} rune={rune} size={32}
+      />
       </div>
-    );
+    ));
   };
 
   const animalOrder: AnimalKey[] = [
@@ -335,8 +320,8 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
         {animalOrder.map((k) => renderRow(k))}
 
         {/* HF / GS pips (temporary vertical stack) */}
-        {renderStack("hf", 89.5, 33.5, hfCount, setHfCount)}    
-        {renderStack("gs", 89.5, 73.0, gsCount, setGsCount)}
+        {renderStack("hf")}    
+        {renderStack("gs")}
 
         {/* Center counter (temporary; your art already contains this) */}
         <div
