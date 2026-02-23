@@ -15,6 +15,10 @@ type AnimalKey =
   | "elk"
   | "bear";
 
+type MetaKind = "hf" | "gs";
+type MetaIndex = 0 | 1 | 2 | 3 | 4;
+type MetaSel = { kind: MetaKind; i: MetaIndex };
+  
 const runeFile: Record<AnimalKey, string> = {
   wolf: "wolf",
   orca: "orca",
@@ -87,6 +91,28 @@ export default function Home() {
 
   const [hfCount, setHfCount] = useState(0);
   const [gsCount, setGsCount] = useState(0);
+
+  const [metaAdjustMode, setMetaAdjustMode] = useState(false);
+const [metaSelected, setMetaSelected] = useState<MetaSel>({ kind: "hf", i: 0 });
+
+
+
+// Starting guesses. You will nudge these onto the printed arc marks.
+const [hfPos, setHfPos] = useState<{ x: number; y: number }[]>([
+  { x: 86.0, y: 36.0 },
+  { x: 88.0, y: 38.0 },
+  { x: 89.5, y: 41.0 },
+  { x: 88.0, y: 44.0 },
+  { x: 86.0, y: 46.0 },
+]);
+
+const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
+  { x: 86.0, y: 63.0 },
+  { x: 88.0, y: 65.0 },
+  { x: 89.5, y: 68.0 },
+  { x: 88.0, y: 71.0 },
+  { x: 86.0, y: 73.0 },
+]);
 
   const [isSealed, setIsSealed] = useState(false);
   const [fadePhase, setFadePhase] = useState<"none" | "toBlack" | "showResult">(
@@ -255,10 +281,6 @@ export default function Home() {
 
         {/* Animal rows */}
         {animalOrder.map((k) => renderRow(k))}
-
-        {/* HF / GS stacks (adjust these anchors later) */}
-        {renderStack("hf", 86.5, 46.5, hfCount, setHfCount)}
-        {renderStack("gs", 86.5, 73.0, gsCount, setGsCount)}
 
         {/* Center counter (temporary; your art already contains this) */}
         <div
