@@ -189,34 +189,24 @@ export default function Home() {
   const copyResultToClipboard = async () => {
   if (!computedResult) return;
 
-  try {
-    const src = getResultImagePath(computedResult.winner.id, computedResult.variant);
+  const src = getResultImagePath(computedResult.winner.id, computedResult.variant);
 
-    // Fetch the image as a blob
+  try {
     const res = await fetch(src, { cache: "no-store" });
     if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`);
-
     const blob = await res.blob();
 
-    // Write to clipboard as an image
-    // ClipboardItem is supported in Chromium and Safari 16+ in secure contexts.
-    // @ts-expect-error ClipboardItem typing can be missing depending on TS lib setup
-    const item = new ClipboardItem({ [blob.type]: blob });
+    const ClipboardItemCtor = (window as any).ClipboardItem;
+    if (!ClipboardItemCtor) throw new Error("ClipboardItem not available");
+
+    const item = new ClipboardItemCtor({ [blob.type]: blob });
     await navigator.clipboard.write([item]);
-
-    // Optional: small UI state like "Copied!" if you want
-    console.log("Copied image to clipboard.");
   } catch (err) {
-    console.error("Copy failed:", err);
-
-    // Fallback: copy the image URL instead
+    // Fallback: copy link
     try {
-      const src = getResultImagePath(computedResult.winner.id, computedResult.variant);
       await navigator.clipboard.writeText(window.location.origin + src);
-      console.log("Copied image link to clipboard as fallback.");
-    } catch (e2) {
-      console.error("Fallback copy link failed:", e2);
-      alert("Could not copy image. Try refreshing and using a different browser, or right-click the image and copy/save it.");
+    } catch {
+      alert("Could not copy. Try a different browser or right-click the image to copy/save.");
     }
   }
 };
