@@ -19,13 +19,8 @@ type MetaKind = "hf" | "gs";
 type MetaIndex = 0 | 1 | 2 | 3 | 4;
 type MetaSel = { kind: MetaKind; i: MetaIndex };
   
-type Animals = {
-  wolf: number;
-  bear: number;
-  raven: number;
-  serpent: number;
-};
-
+type Animals = Record<AnimalKey, number>;
+ 
 type BuildSnapshot = {
   animals: Animals;
   hf: number;
@@ -128,6 +123,8 @@ const toWord = (n: number) => numberWords[n] ?? String(n);
 
   const [metaAdjustMode, setMetaAdjustMode] = useState(false);
   const [metaSelected, setMetaSelected] = useState<MetaSel>({ kind: "hf", i: 0 });
+
+  const [submittedBuild, setSubmittedBuild] = useState<BuildSnapshot | null>(null);
 
 // Starting guesses. You will nudge these onto the printed arc marks.
 const [hfPos, setHfPos] = useState<{ x: number; y: number }[]>([
@@ -412,8 +409,10 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
 
         {/* Bottom seal button */}
         <button
-          onClick={sealFate}
-          disabled={!isAnimalQuotaMet}
+          onClick={() => {
+          console.log("CLICKED");
+          sealFate();
+          }}
           style={{
             position: "absolute",
             left: "50%",
@@ -455,23 +454,42 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
 
         {/* Placeholder result reveal */}
         {fadePhase === "showResult" && (
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "rgba(255,255,255,0.9)",
-              fontFamily: "var(--font-viking)",
-              letterSpacing: "0.1em",
-              fontSize: 26,
-              backgroundColor: "#000",
-            }}
-          >
-            RESULT WILL APPEAR HERE
-          </div>
+  <div
+    style={{
+      position: "absolute",
+      inset: 0,
+      backgroundColor: "rgba(0,0,0,1)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "var(--font-viking)",
+      color: "rgba(255,255,255,0.92)",
+      textAlign: "center",
+      whiteSpace: "pre-wrap",
+      lineHeight: 1.6,
+    }}
+  >
+    <div>
+      <div style={{ fontSize: 28, letterSpacing: "0.08em" }}>
+        Ledger received
+      </div>
+
+      <div style={{ marginTop: 18, fontSize: 18, letterSpacing: "0.04em" }}>
+        {submittedBuild ? (
+          <>
+            {Object.entries(submittedBuild.animals)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join("   ")}
+            {"\n"}
+            HF: {submittedBuild.hf}   GS: {submittedBuild.gs}
+          </>
+        ) : (
+          "No submission captured."
         )}
+      </div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );
