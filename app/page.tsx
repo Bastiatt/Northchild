@@ -91,8 +91,8 @@ function Pip({ active, rune, size = 28 }: { active: boolean; rune: string; size?
 }
 
 export default function Home() {
-  
-  const [animals, setAnimals] = useState<Record<AnimalKey, number>>({
+  // ---------- state ----------
+  const [animals, setAnimals] = useState<Animals>({
     wolf: 0,
     orca: 0,
     serpent: 0,
@@ -103,85 +103,74 @@ export default function Home() {
     bear: 0,
   });
 
-  const numberWords: Record<number, string> = {
-  0: "None",
-  1: "One",
-  2: "Two",
-  3: "Three",
-  4: "Four",
-  5: "Five",
-  6: "Six",
-  7: "Seven",
-  8: "Eight",
-  9: "Nine",
-  10: "Ten",
-  11: "Eleven",
-  12: "Twelve",
-  13: "Thirteen",
-  14: "Fourteen",
-  15: "Fifteen",
-};
-
-// state hooks should live together
-const [computedResult, setComputedResult] = useState<NorthchildResult | null>(null);
-
-const resetBuild = () => {
-  setIsSealed(false);
-  setFadePhase("none");
-  setComputedResult(null);
-  setSubmittedBuild(null); // if you have this state
-  setResultImgReady(false);
-  setHfCount(0);
-  setGsCount(0);
-  setAnimals({
-    wolf: 0, orca: 0, serpent: 0, raven: 0,
-    owl: 0, eagle: 0, elk: 0, bear: 0,
-  });
-};
-
-const toWord = (n: number) => numberWords[n] ?? String(n);
-  
   const [hfCount, setHfCount] = useState(0);
   const [gsCount, setGsCount] = useState(0);
 
-  const [metaAdjustMode, setMetaAdjustMode] = useState(false);
-  const [metaSelected, setMetaSelected] = useState<MetaSel>({ kind: "hf", i: 0 });
-
-  const [submittedBuild, setSubmittedBuild] = useState<BuildSnapshot | null>(null);
-
-// Starting guesses. You will nudge these onto the printed arc marks.
-const [hfPos, setHfPos] = useState<{ x: number; y: number }[]>([
-  { x: 93.6, y: 22.6 },
-  { x: 96.1, y: 28.0 },
-  { x: 97.6, y: 34.0 },
-  { x: 96.2, y: 39.4 },
-  { x: 93.7, y: 44.4 },
-]);
-
-const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
-  { x: 86.1, y: 67.1 },
-  { x: 83.6, y: 72.6 },
-  { x: 82.2, y: 78.2 },
-  { x: 83.7, y: 83.9 },
-  { x: 86.1, y: 89.0 },
-]);
-
   const [isSealed, setIsSealed] = useState(false);
+
+  const [computedResult, setComputedResult] = useState<NorthchildResult | null>(
+    null
+  );
+  const [resultImgReady, setResultImgReady] = useState(false);
+
   const [fadePhase, setFadePhase] = useState<"none" | "toBlack" | "showResult">(
     "none"
   );
 
-  const REQUIRED_ANIMAL_PIPS = maxTotal; // keep using your existing 15 for now
+  // ---------- constants ----------
+  const numberWords: Record<number, string> = {
+    0: "None",
+    1: "One",
+    2: "Two",
+    3: "Three",
+    4: "Four",
+    5: "Five",
+    6: "Six",
+    7: "Seven",
+    8: "Eight",
+    9: "Nine",
+    10: "Ten",
+    11: "Eleven",
+    12: "Twelve",
+    13: "Thirteen",
+    14: "Fourteen",
+    15: "Fifteen",
+  };
 
+  const toWord = (n: number) => numberWords[n] ?? String(n);
+
+  // Fade timing (tweak here)
+  const BLACK_FADE_MS = 2200;
+  const BLACK_HOLD_MS = 500;
+  const IMAGE_FADE_MS = 2200;
+
+  // Fixed HF/GS positions (no meta-adjust mode)
+  const HF_POS: { x: number; y: number }[] = [
+    { x: 93.6, y: 22.6 },
+    { x: 96.1, y: 28.0 },
+    { x: 97.6, y: 34.0 },
+    { x: 96.2, y: 39.4 },
+    { x: 93.7, y: 44.4 },
+  ];
+
+  const GS_POS: { x: number; y: number }[] = [
+    { x: 86.1, y: 67.1 },
+    { x: 83.6, y: 72.6 },
+    { x: 82.2, y: 78.2 },
+    { x: 83.7, y: 83.9 },
+    { x: 86.1, y: 89.0 },
+  ];
+
+  // ---------- derived ----------
   const totalAnimalPips = useMemo(
-  () => Object.values(animals).reduce((a, b) => a + b, 0),
-  [animals]
+    () => Object.values(animals).reduce((a, b) => a + b, 0),
+    [animals]
   );
 
-  const remainingAnimalPips = Math.max(0, REQUIRED_ANIMAL_PIPS - totalAnimalPips);
+  const remainingAnimalPips = Math.max(0, maxTotal - totalAnimalPips);
+  const isAnimalQuotaMet = totalAnimalPips === maxTotal;
 
-  const isAnimalQuotaMet = totalAnimalPips === REQUIRED_ANIMAL_PIPS;
-
+  // ---------- actions ----------
   const increment = (key: AnimalKey) => {
     if (isSealed) return;
     if (totalAnimalPips >= maxTotal) return;
@@ -195,90 +184,69 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
     setAnimals((prev) => ({ ...prev, [key]: prev[key] - 1 }));
   };
 
-  const sealFate = () => {
-    console.log("clicked");
+  const resetBuild = () => {
+    setIsSealed(false);
+    setFadePhase("none");
+    setComputedResult(null);
+    setResultImgReady(false);
 
-    try {
-      // 1) Compute first (no state changes yet)
-      const result = computeNorthchildResult(animals, hfCount, gsCount);
-      if (!result.isValid) return;
+    setHfCount(0);
+    setGsCount(0);
 
-      setComputedResult(result);
-      setIsSealed(true);
-      setResultImgReady(false);
-
-      // start fade to black
-      setFadePhase("toBlack");
-
-      // preload the image while black is happening
-      const src = getResultImagePath(result.winner.id, result.variant);
-      const img = new Image();
-      img.src = src;
-
-      img.onload = () => {
-        setResultImgReady(true);
-        // once the image is ready, reveal phase
-        setFadePhase("showResult");
-      };
-
-  useEffect(() => {
-  const onKeyDown = (e: KeyboardEvent) => {
-    const k = e.key.toLowerCase();
-
-    // Toggle meta adjust mode
-    if (k === "m") {
-      setMetaAdjustMode((v) => !v);
-      return;
-    }
-
-    // Export positions
-    if (k === "e") {
-      if (!metaAdjustMode) return;
-      console.log("HF_POS =", JSON.stringify(hfPos, null, 2));
-      console.log("GS_POS =", JSON.stringify(gsPos, null, 2));
-      alert("HF/GS positions printed to console.");
-      return;
-    }
-
-    if (!metaAdjustMode) return;
-
-    const step = e.shiftKey ? 1 : 0.1;
-
-    if (["arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) {
-      e.preventDefault();
-
-      const bump = (setArr: any) => {
-        setArr((prev: { x: number; y: number }[]) => {
-          const next = prev.map((p) => ({ ...p }));
-          const idx = metaSelected.i;
-          let { x, y } = next[idx];
-
-          if (k === "arrowup") y -= step;
-          if (k === "arrowdown") y += step;
-          if (k === "arrowleft") x -= step;
-          if (k === "arrowright") x += step;
-
-          next[idx] = {
-            x: Math.max(0, Math.min(100, Number(x.toFixed(2)))),
-            y: Math.max(0, Math.min(100, Number(y.toFixed(2)))),
-          };
-          return next;
-        });
-      };
-
-      if (metaSelected.kind === "hf") bump(setHfPos);
-      else bump(setGsPos);
-    }
+    setAnimals({
+      wolf: 0,
+      orca: 0,
+      serpent: 0,
+      raven: 0,
+      owl: 0,
+      eagle: 0,
+      elk: 0,
+      bear: 0,
+    });
   };
 
-  window.addEventListener("keydown", onKeyDown);
-  return () => window.removeEventListener("keydown", onKeyDown);
-}, [metaAdjustMode, metaSelected, hfPos, gsPos]);
+  const sealFate = () => {
+    if (isSealed) return;
 
+    const result = computeNorthchildResult(animals, hfCount, gsCount);
+    if (!result.isValid) return;
+
+    setComputedResult(result);
+    setIsSealed(true);
+    setResultImgReady(false);
+
+    // start fade to black
+    setFadePhase("toBlack");
+
+    // preload result image while black is happening
+    const src = getResultImagePath(result.winner.id, result.variant);
+    const img = new Image();
+    img.src = src;
+
+    let imgLoaded = false;
+    let minBlackElapsed = false;
+
+    const maybeReveal = () => {
+      if (imgLoaded && minBlackElapsed) {
+        setResultImgReady(true);
+        setFadePhase("showResult");
+      }
+    };
+
+    img.onload = () => {
+      imgLoaded = true;
+      maybeReveal();
+    };
+
+    window.setTimeout(() => {
+      minBlackElapsed = true;
+      maybeReveal();
+    }, BLACK_FADE_MS + BLACK_HOLD_MS);
+  };
+
+  // ---------- render helpers ----------
   const renderRow = (key: AnimalKey) => {
-    const count = animals[key];
     const pos = layout[key];
-
     return (
       <div
         key={key}
@@ -295,70 +263,57 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
           transform: "translate(-50%, -50%)",
           display: "flex",
           gap: 12,
-          cursor: "pointer",
+          cursor: isSealed ? "default" : "pointer",
           userSelect: "none",
+          zIndex: 2,
         }}
       >
         {[0, 1, 2, 3].map((i) => (
-          <Pip key={i} active={i < count} rune={runeFile[key]} />
+          <Pip key={i} active={i < animals[key]} rune={runeFile[key]} />
         ))}
       </div>
     );
   };
 
-  const renderStack = (kind: "hf" | "gs") => {
-  const coords = kind === "hf" ? hfPos : gsPos;
-  const count = kind === "hf" ? hfCount : gsCount;
-  const setCount = kind === "hf" ? setHfCount : setGsCount;
-  const rune = kind === "hf" ? metaRuneFile.hf : metaRuneFile.gs;
+  const renderMetaStack = (kind: "hf" | "gs") => {
+    const coords = kind === "hf" ? HF_POS : GS_POS;
+    const count = kind === "hf" ? hfCount : gsCount;
+    const setCount = kind === "hf" ? setHfCount : setGsCount;
+    const rune = kind === "hf" ? metaRuneFile.hf : metaRuneFile.gs;
 
-  const inc = () => {
-    if (isSealed) return;
-    setCount((c: number) => Math.min(5, c + 1));
+    const inc = () => {
+      if (isSealed) return;
+      setCount((c) => Math.min(5, c + 1));
+    };
+
+    const dec = () => {
+      if (isSealed) return;
+      setCount((c) => Math.max(0, c - 1));
+    };
+
+    return coords.map((p, i) => (
+      <div
+        key={`${kind}-${i}`}
+        onClick={inc}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          dec();
+        }}
+        style={{
+          position: "absolute",
+          left: `${p.x}%`,
+          top: `${p.y}%`,
+          transform: "translate(-50%, -50%)",
+          cursor: isSealed ? "default" : "pointer",
+          userSelect: "none",
+          zIndex: 2,
+        }}
+        title="Left click adds, right click removes."
+      >
+        <Pip active={i < count} rune={rune} />
+      </div>
+    ));
   };
-
-  const dec = () => {
-    if (isSealed) return;
-    setCount((c: number) => Math.max(0, c - 1));
-  };
-
-  return coords.map((pos, i) => (
-    <div
-      key={`${kind}-${i}`}
-      onClick={(e) => {
-        if (metaAdjustMode) return; // in adjust mode, do not change counts
-        inc();
-      }}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        if (metaAdjustMode) return;
-        dec();
-      }}
-      onMouseEnter={() => {
-        if (metaAdjustMode) setMetaSelected({ kind, i: i as MetaIndex });
-      }}
-      style={{
-        position: "absolute",
-        left: `${pos.x}%`,
-        top: `${pos.y}%`,
-        transform: "translate(-50%, -50%)",
-        cursor: "pointer",
-        zIndex:
-          metaAdjustMode && metaSelected.kind === kind && metaSelected.i === i
-            ? 10
-            : 1,
-        outline:
-          metaAdjustMode && metaSelected.kind === kind && metaSelected.i === i
-            ? "2px solid cyan"
-            : "none",
-        userSelect: "none",
-      }}
-      title="Left click adds, right click removes."
-    >
-      <Pip active={i < count} rune={rune} size={32} />
-    </div>
-  ));
-};
 
   const animalOrder: AnimalKey[] = [
     "bear",
@@ -371,6 +326,7 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
     "raven",
   ];
 
+  // ---------- UI ----------
   return (
     <div
       style={{
@@ -403,17 +359,18 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
             objectPosition: "center",
             pointerEvents: "none",
             userSelect: "none",
+            zIndex: 0,
           }}
         />
 
         {/* Animal rows */}
         {animalOrder.map((k) => renderRow(k))}
 
-        {/* HF / GS pips (temporary vertical stack) */}
-        {renderStack("hf")}    
-        {renderStack("gs")}
+        {/* HF / GS stacks */}
+        {renderMetaStack("hf")}
+        {renderMetaStack("gs")}
 
-        {/* Center counter (temporary; your art already contains this) */}
+        {/* Center counter */}
         <div
           style={{
             position: "absolute",
@@ -428,110 +385,104 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
             lineHeight: 1.5,
             userSelect: "none",
             pointerEvents: "none",
-             }}
->
-  <div>Fifteen spirits to name her fate</div>
-
-  <div style={{ marginTop: 6 }}>
-    {toWord(totalAnimalPips)} chosen&nbsp;&nbsp;&nbsp;
-    {toWord(remainingAnimalPips)} remain
-  </div>
-</div>
-
-     {/* Bottom seal button */}
-<button
-  onClick={() => {
-    console.log("CLICKED");
-    sealFate();
-  }}
-  style={{
-    position: "absolute",
-    left: "50%",
-    top: "95.6%",
-    transform: "translate(-50%, -50%)",
-    background: "none",
-    border: "none",
-    padding: 0,
-    cursor: isAnimalQuotaMet ? "pointer" : "default",
-    opacity: isAnimalQuotaMet ? 1 : 0.15,
-    transition: "opacity 0.2s ease",
-    pointerEvents: isSealed ? "none" : "auto",
-  }}
-  aria-label="And thus the North shall know its child"
->
-  <img
-    src="/ui/button-invoke.png"
-    alt=""
-    style={{
-      width: 415,      // tweak this number
-      height: "auto",
-      display: "block",
-    }}
-  />
-</button>
-
-{/* Fade overlay (black) */}
-  <div
-    style={{
-      position: "absolute",
-      inset: 0,
-      background: "black",
-      opacity:
-        fadePhase === "none"
-          ? 0
-          : 1,
-      transition: "opacity 2.2s ease",
-      zIndex: 50,
-      pointerEvents: fadePhase === "none" ? "none" : "auto",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-    }}
-  >
-    const [resultImgReady, setResultImgReady] = useState(false);
-    
-    {fadePhase === "showResult" && computedResult && (
-      <div
-        style={{
-          textAlign: "center",
-          opacity: fadePhase === "showResult" && resultImgReady ? 1 : 0,
-          transition: "opacity 2.2s ease",
-          pointerEvents: fadePhase === "showResult" ? "auto" : "none",
-        }}
-      >
-        {computedResult && (
-          <>
-            <img
-              src={getResultImagePath(computedResult.winner.id, computedResult.variant)}
-              alt=""
-              style={{
-                maxWidth: "92%",
-                height: "auto",
-                borderRadius: 12,
-                display: "block",
-              }}
-            />
-
-        <button
-          onClick={resetBuild}
-          style={{
-            marginTop: 28,
-            padding: "12px 18px",
-            fontSize: 16,
-            borderRadius: 10,
-            border: "1px solid rgba(255,255,255,0.25)",
-            background: "rgba(255,255,255,0.10)",
-            color: "white",
-            cursor: "pointer",
+            zIndex: 2,
           }}
         >
-          New Build
-        </button>
-      </div>
-    )}
-  </div>
+          <div>Fifteen spirits to name her fate</div>
+          <div style={{ marginTop: 6 }}>
+            {toWord(totalAnimalPips)} chosen&nbsp;&nbsp;&nbsp;
+            {toWord(remainingAnimalPips)} remain
+          </div>
+        </div>
 
-  </div>
-</div>
-);
+        {/* Bottom seal button */}
+        <button
+          onClick={sealFate}
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "95.6%",
+            transform: "translate(-50%, -50%)",
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: isAnimalQuotaMet && !isSealed ? "pointer" : "default",
+            opacity: isAnimalQuotaMet ? 1 : 0.15,
+            transition: "opacity 0.2s ease",
+            pointerEvents: isSealed ? "none" : "auto",
+            zIndex: 3,
+          }}
+          aria-label="And thus the North shall know its child"
+        >
+          <img
+            src="/ui/button-invoke.png"
+            alt=""
+            style={{ width: 418, height: "auto", display: "block" }}
+          />
+        </button>
+
+        {/* Overlay: always mounted so opacity can animate */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            background: "black",
+            opacity: fadePhase === "none" ? 0 : 1,
+            transition: `opacity ${BLACK_FADE_MS}ms ease`,
+            zIndex: 50,
+            pointerEvents: fadePhase === "none" ? "none" : "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {/* Result container fades in only when ready */}
+          <div
+            style={{
+              textAlign: "center",
+              opacity:
+                fadePhase === "showResult" && computedResult && resultImgReady
+                  ? 1
+                  : 0,
+              transition: `opacity ${IMAGE_FADE_MS}ms ease`,
+            }}
+          >
+            {computedResult && (
+              <>
+                <img
+                  src={getResultImagePath(
+                    computedResult.winner.id,
+                    computedResult.variant
+                  )}
+                  alt=""
+                  style={{
+                    maxWidth: "92%",
+                    height: "auto",
+                    borderRadius: 12,
+                    display: "block",
+                  }}
+                />
+
+                <button
+                  onClick={resetBuild}
+                  style={{
+                    marginTop: 28,
+                    padding: "12px 18px",
+                    fontSize: 16,
+                    borderRadius: 10,
+                    border: "1px solid rgba(255,255,255,0.25)",
+                    background: "rgba(255,255,255,0.10)",
+                    color: "white",
+                    cursor: "pointer",
+                  }}
+                >
+                  New Build
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
