@@ -250,3 +250,12 @@ export function computeNorthchildResult(
     },
   };
 }
+
+export function getResultImagePath(id: number, variant: FateVariant) {
+  const padded = id.toString().padStart(2, "0");
+
+  const folder =
+    variant === "HF" ? "highflame" : variant === "GS" ? "gravesong" : "base";
+
+  return `/results/${folder}/${padded}.png`;
+}

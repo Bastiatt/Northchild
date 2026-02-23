@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { computeNorthchildResult, type NorthchildResult } from "./lib/northchildMechanics";
+import {
+  computeNorthchildResult,
+  getResultImagePath,
+  type NorthchildResult
+} from "./lib/northchildMechanics";
 
 const maxPerAnimal = 4;
 const maxTotal = 15;
@@ -191,30 +195,31 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
   };
 
   const sealFate = () => {
-    if (!isAnimalQuotaMet) return;
-    if (isSealed) return;
-  
-    const snapshot: BuildSnapshot = {
-      animals: { ...animals },
-      hf: hfCount,
-      gs: gsCount,
-    };
+    console.log("clicked");
 
-   const result = computeNorthchildResult(animals, hfCount, gsCount);
-    if (!result.isValid) {
-      // optional: show error, or just return without sealing
-      return;
+    try {
+      // 1) Compute first (no state changes yet)
+      const result = computeNorthchildResult(animals, hfCount, gsCount);
+
+      // 2) If invalid, do NOT seal. Just log and exit.
+      if (!result.isValid) {
+        console.warn("Invalid build:", result.errors);
+        return;
+      }
+
+      // 3) Persist the result, then seal, then fade
+      setComputedResult(result);
+      setIsSealed(true);
+
+      setFadePhase("toBlack");
+      window.setTimeout(() => {
+        setFadePhase("showResult");
+      }, 700);
+    } catch (err) {
+      console.error("sealFate failed:", err);
     }
-    setComputedResult(result);
-
-    setSubmittedBuild(snapshot);   // freeze the ledger entry
-    setIsSealed(true);
-    setFadePhase("toBlack");
-
-    window.setTimeout(() => {
-      setFadePhase("showResult");
-    }, 1900);
   };
+
   useEffect(() => {
   const onKeyDown = (e: KeyboardEvent) => {
     const k = e.key.toLowerCase();
@@ -465,47 +470,36 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
           />
         </button>
 
-        {fadePhase !== "none" && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: fadePhase === "toBlack" ? "rgba(0,0,0,1)" : "rgba(0,0,0,0.92)",
-              transition: "background 0.6s ease",
-              zIndex: 9999,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 24,
-            }}
-          >
-            {fadePhase === "showResult" && computedResult !== null && (
-              <div style={{ textAlign: "center", maxWidth: 720, color: "white" }}>
-                <div style={{ fontSize: 44, fontWeight: 700, letterSpacing: 0.5 }}>
-                {computedResult.winner.displayName}
-              </div>
+        {fadePhase === "showResult" && computedResult && (
+          <div style={{ textAlign: "center" }}>
+            <img
+              src={getResultImagePath(
+                computedResult.winner.id,
+                computedResult.variant
+              )}
+              alt={computedResult.winner.displayName}
+              style={{
+                maxWidth: "100%",
+                height: "auto",
+                borderRadius: 12,
+              }}
+            />
 
-              <div style={{ marginTop: 10, fontSize: 16, opacity: 0.9 }}>
-                Runner-up: {computedResult.runnerUp.displayName}
-              </div>
-
-                <button
-                  onClick={resetBuild}
-                  style={{
-                    marginTop: 28,
-                    padding: "12px 18px",
-                    fontSize: 16,
-                    borderRadius: 10,
-                    border: "1px solid rgba(255,255,255,0.25)",
-                    background: "rgba(255,255,255,0.10)",
-                    color: "white",
-                    cursor: "pointer",
-                  }}
-                >
-                  New Build
-                </button>
-              </div>
-            )}
+            <button
+              onClick={resetBuild}
+              style={{
+                marginTop: 28,
+                padding: "12px 18px",
+                fontSize: 16,
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.25)",
+                background: "rgba(255,255,255,0.10)",
+                color: "white",
+                cursor: "pointer",
+              }}
+            >
+              New Build
+            </button>
           </div>
         )}
       </div>
