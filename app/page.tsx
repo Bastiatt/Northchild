@@ -375,7 +375,7 @@ export default function Home() {
       >
         {/* Background image layer */}
         <img
-          src="/ui/northchild-gate-clean.png"
+          src="/ui/northchild-gate-clean.webp"
           alt=""
           style={{
             position: "absolute",
