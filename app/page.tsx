@@ -19,6 +19,19 @@ type MetaKind = "hf" | "gs";
 type MetaIndex = 0 | 1 | 2 | 3 | 4;
 type MetaSel = { kind: MetaKind; i: MetaIndex };
   
+type Animals = {
+  wolf: number;
+  bear: number;
+  raven: number;
+  serpent: number;
+};
+
+type BuildSnapshot = {
+  animals: Animals;
+  hf: number;
+  gs: number;
+};
+
 const runeFile: Record<AnimalKey, string> = {
   wolf: "wolf",
   orca: "orca",
@@ -89,6 +102,27 @@ export default function Home() {
     bear: 0,
   });
 
+  const numberWords: Record<number, string> = {
+  0: "None",
+  1: "One",
+  2: "Two",
+  3: "Three",
+  4: "Four",
+  5: "Five",
+  6: "Six",
+  7: "Seven",
+  8: "Eight",
+  9: "Nine",
+  10: "Ten",
+  11: "Eleven",
+  12: "Twelve",
+  13: "Thirteen",
+  14: "Fourteen",
+  15: "Fifteen",
+};
+
+const toWord = (n: number) => numberWords[n] ?? String(n);
+  
   const [hfCount, setHfCount] = useState(0);
   const [gsCount, setGsCount] = useState(0);
 
@@ -117,17 +151,20 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
     "none"
   );
 
-  const total = useMemo(
-    () => Object.values(animals).reduce((a, b) => a + b, 0),
-    [animals]
+  const REQUIRED_ANIMAL_PIPS = maxTotal; // keep using your existing 15 for now
+
+  const totalAnimalPips = useMemo(
+  () => Object.values(animals).reduce((a, b) => a + b, 0),
+  [animals]
   );
 
-  const remaining = maxTotal - total;
-  const isReady = total === maxTotal;
+  const remainingAnimalPips = Math.max(0, REQUIRED_ANIMAL_PIPS - totalAnimalPips);
+
+  const isAnimalQuotaMet = totalAnimalPips === REQUIRED_ANIMAL_PIPS;
 
   const increment = (key: AnimalKey) => {
     if (isSealed) return;
-    if (total >= maxTotal) return;
+    if (totalAnimalPips >= maxTotal) return;
     if (animals[key] >= maxPerAnimal) return;
     setAnimals((prev) => ({ ...prev, [key]: prev[key] + 1 }));
   };
@@ -139,9 +176,16 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
   };
 
   const sealFate = () => {
-    if (!isReady) return;
+    if (!isAnimalQuotaMet) return;
     if (isSealed) return;
 
+    const snapshot: BuildSnapshot = {
+      animals: { ...animals },
+      hf: hfCount,
+      gs: gsCount,
+    };
+
+    setSubmittedBuild(snapshot);   // freeze the ledger entry
     setIsSealed(true);
     setFadePhase("toBlack");
 
@@ -149,7 +193,6 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
       setFadePhase("showResult");
     }, 1900);
   };
-
   useEffect(() => {
   const onKeyDown = (e: KeyboardEvent) => {
     const k = e.key.toLowerCase();
@@ -236,39 +279,58 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
   };
 
   const renderStack = (kind: "hf" | "gs") => {
-    const coords = kind === "hf" ? hfPos : gsPos;
-    const count = kind === "hf" ? hfCount : gsCount;
-    const setCount = kind === "hf" ? setHfCount : setGsCount;
-    const rune = kind === "hf" ? metaRuneFile.hf : metaRuneFile.gs;
+  const coords = kind === "hf" ? hfPos : gsPos;
+  const count = kind === "hf" ? hfCount : gsCount;
+  const setCount = kind === "hf" ? setHfCount : setGsCount;
+  const rune = kind === "hf" ? metaRuneFile.hf : metaRuneFile.gs;
 
-    return coords.map((pos, i) => (
-      <div
-        key={`${kind}-${i}`}
-        onClick={() => {
-          if (isSealed) return;
-          // Toggle logic: click the current max to decrease, click higher to increase
-          setCount(i + 1 === count ? i : i + 1);
-        }}
-        onMouseEnter={() => {
-          if (metaAdjustMode) setMetaSelected({ kind, i: i as MetaIndex });
-        }}
-        style={{
-          position: "absolute",
-          left: `${pos.x}%`,
-          top: `${pos.y}%`,
-          transform: "translate(-50%, -50%)",
-          cursor: "pointer",
-          zIndex: metaAdjustMode && metaSelected.kind === kind && metaSelected.i === i ? 10 : 1,
-          outline: metaAdjustMode && metaSelected.kind === kind && metaSelected.i === i 
-            ? "2px solid cyan" 
-            : "none",
-        }}
-      >
-        <Pip active={i < count} rune={rune} size={32}
-      />
-      </div>
-    ));
+  const inc = () => {
+    if (isSealed) return;
+    setCount((c: number) => Math.min(5, c + 1));
   };
+
+  const dec = () => {
+    if (isSealed) return;
+    setCount((c: number) => Math.max(0, c - 1));
+  };
+
+  return coords.map((pos, i) => (
+    <div
+      key={`${kind}-${i}`}
+      onClick={(e) => {
+        if (metaAdjustMode) return; // in adjust mode, do not change counts
+        inc();
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        if (metaAdjustMode) return;
+        dec();
+      }}
+      onMouseEnter={() => {
+        if (metaAdjustMode) setMetaSelected({ kind, i: i as MetaIndex });
+      }}
+      style={{
+        position: "absolute",
+        left: `${pos.x}%`,
+        top: `${pos.y}%`,
+        transform: "translate(-50%, -50%)",
+        cursor: "pointer",
+        zIndex:
+          metaAdjustMode && metaSelected.kind === kind && metaSelected.i === i
+            ? 10
+            : 1,
+        outline:
+          metaAdjustMode && metaSelected.kind === kind && metaSelected.i === i
+            ? "2px solid cyan"
+            : "none",
+        userSelect: "none",
+      }}
+      title="Left click adds, right click removes."
+    >
+      <Pip active={i < count} rune={rune} size={32} />
+    </div>
+  ));
+};
 
   const animalOrder: AnimalKey[] = [
     "bear",
@@ -294,10 +356,10 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
       <div
         style={{
           position: "relative",
-          width: "min(100%, 1400px)",
+          width: "1200px",
+          maxWidth: "100%",
           aspectRatio: "16 / 9",
-          backgroundColor: "#0a0a0a",
-          overflow: "hidden",
+          margin: "0 auto",
         }}
       >
         {/* Background image layer */}
@@ -328,52 +390,55 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
           style={{
             position: "absolute",
             left: "50%",
-            top: "50%",
+            top: "54.3%",
             transform: "translate(-50%, -50%)",
-            fontFamily: "Viking, serif",
-            fontSize: 22,
-            letterSpacing: "0.14em",
-            color: "rgba(255,255,255,0.85)",
-            textShadow: "0 2px 10px rgba(0,0,0,0.55)",
+            fontFamily: "var(--font-viking)",
+            fontSize: 15.0,
+            letterSpacing: "0.05em",
+            color: "#415662",
+            textAlign: "center",
+            lineHeight: 1.5,
             userSelect: "none",
             pointerEvents: "none",
-          }}
-        >
-          {remaining} REMAIN
-        </div>
+        }}
+>
+  <div>Fifteen spirits to name her fate</div>
+
+  <div style={{ marginTop: 6 }}>
+    {toWord(totalAnimalPips)} chosen&nbsp;&nbsp;&nbsp;
+    {toWord(remainingAnimalPips)} remain
+  </div>
+</div>
 
         {/* Bottom seal button */}
         <button
           onClick={sealFate}
-          disabled={!isReady || isSealed}
+          disabled={!isAnimalQuotaMet}
           style={{
             position: "absolute",
-            bottom: "7.5%",
             left: "50%",
-            transform: "translateX(-50%)",
-            padding: "14px 28px",
-            fontFamily: "Viking, serif",
-            fontSize: 18,
-            letterSpacing: "0.1em",
-            borderRadius: 10,
-            border: isReady
-              ? "1px solid rgba(180,210,255,0.55)"
-              : "1px solid rgba(255,255,255,0.22)",
-            color: isReady
-              ? "rgba(215,235,255,0.95)"
-              : "rgba(255,255,255,0.28)",
-            background: isReady
-              ? "linear-gradient(180deg, rgba(35,70,115,0.55), rgba(20,40,70,0.55))"
-              : "rgba(255,255,255,0.03)",
-            boxShadow: isReady
-              ? "inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 18px rgba(0,0,0,0.35)"
-              : "inset 0 1px 0 rgba(255,255,255,0.06)",
-            cursor: isReady && !isSealed ? "pointer" : "default",
-            transition: "all 0.25s ease",
-            userSelect: "none",
+            top: "95.6%",                // your tuned position
+            transform: "translate(-50%, -50%)",
+            background: "none",
+            border: "none",
+            padding: 0,
+            cursor: isAnimalQuotaMet ? "pointer" : "default",
+            opacity: isAnimalQuotaMet ? 1 : 0.15,
+            transition: "opacity 0.2s ease",
           }}
+          aria-label="And thus the North shall know its child"
         >
-          AND THUS THE NORTH SHALL KNOW ITS CHILD
+          <img
+            src="/ui/button-invoke.png"
+            alt=""
+            style={{
+              display: "block",
+              width: 450,              // set to your designed pixel width
+              height: "auto",
+              pointerEvents: "none",
+              userSelect: "none",
+            }}
+          />
         </button>
 
         {/* Fade overlay */}
@@ -398,7 +463,7 @@ const [gsPos, setGsPos] = useState<{ x: number; y: number }[]>([
               alignItems: "center",
               justifyContent: "center",
               color: "rgba(255,255,255,0.9)",
-              fontFamily: "Viking, serif",
+              fontFamily: "var(--font-viking)",
               letterSpacing: "0.1em",
               fontSize: 26,
               backgroundColor: "#000",
