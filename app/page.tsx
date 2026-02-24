@@ -451,7 +451,7 @@ export default function Home() {
         {/* Overlay: always mounted so opacity can animate */}
         <div
           style={{
-            position: "absolute",
+            position: "fixed",
             inset: 0,
             background: "black",
             opacity: fadePhase === "none" ? 0 : 1,
@@ -482,12 +482,17 @@ export default function Home() {
                     computedResult.variant
                   )}
                   alt=""
-                  style={{
-                    maxWidth: "92%",
-                    height: "auto",
-                    borderRadius: 12,
-                    display: "block",
-                  }}
+                 style={{
+                  maxWidth: "92vw",
+                  maxHeight: "85vh",
+                  width: "auto",
+                  height: "auto",
+                  borderRadius: 12,
+                  display: "block",
+                  overflow: "auto",
+                  padding: 24,
+                  boxSizing: "border-box",
+                }}
                 />
                 <button
                   onClick={copyResultToClipboard}
