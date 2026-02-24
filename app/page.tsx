@@ -485,19 +485,21 @@ export default function Home() {
                  style={{
                   maxWidth: "92vw",
                   maxHeight: "85vh",
+                  maxHeight: "85dvh",
                   width: "auto",
                   height: "auto",
                   borderRadius: 12,
                   display: "block",
                   overflow: "auto",
-                  padding: 24,
+                  padding: 16,
+                  WebkitOverflowScrolling: "touch",
                   boxSizing: "border-box",
                 }}
                 />
                 <button
                   onClick={copyResultToClipboard}
                   style={{
-                    marginTop: 28,
+                    marginBottom: 24,
                     padding: "12px 18px",
                     fontSize: 16,
                     borderRadius: 10,
