@@ -21,7 +21,6 @@ const layout: Record<AnimalKey, { x: number; y: number }> = {
   owl: { x: 47.6, y: 42.1 }, bear: { x: 47.6, y: 27.5 },
 };
 
-// Individually sized and positioned augmentation pips
 const HF_POS = [
   { x: 32, y: 76.3, size: 34 },
   { x: 26.95, y: 68.9, size: 40 },
@@ -67,6 +66,49 @@ export default function Home() {
       setStep(2);
       setTimeout(() => { setFadePhase("none"); }, 100);
     }, 2200);
+  };
+
+  // --- ADDED CLIPBOARD FUNCTION ---
+  const copyResultToClipboard = async () => {
+    if (!computedResult) return;
+    const src = getResultImagePath(computedResult.winner.id, computedResult.variant);
+
+    try {
+      const img = new Image();
+      img.crossOrigin = "anonymous"; 
+      img.src = src;
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(img, 0, 0);
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        try {
+          // @ts-ignore
+          const data = [new ClipboardItem({ [blob.type]: blob })];
+          await navigator.clipboard.write(data);
+          alert("Fate copied to clipboard!");
+        } catch (err) {
+          throw err;
+        }
+      }, "image/png");
+    } catch (err) {
+      try {
+        await navigator.clipboard.writeText(window.location.origin + src);
+        alert("Link copied to clipboard!");
+      } catch {
+        alert("Could not copy. Right-click the image to save.");
+      }
+    }
   };
 
   const sealFate = () => {
@@ -132,14 +174,80 @@ export default function Home() {
           </>
         )}
 
-        <div style={{ position: "fixed", inset: 0, background: "black", opacity: fadePhase === "toBlack" || fadePhase === "showResult" ? 1 : 0, transition: "opacity 2200ms ease", zIndex: 50, pointerEvents: fadePhase === "none" ? "none" : "auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {/* The Ritual Transition Overlay */}
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "black",
+            opacity: fadePhase === "toBlack" || fadePhase === "showResult" ? 1 : 0,
+            transition: "opacity 2200ms ease",
+            zIndex: 50,
+            pointerEvents: fadePhase === "none" ? "none" : "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {/* Absolutely Centered Logo */}
+          {(fadePhase === "toBlack" || (fadePhase === "showResult" && !computedResult)) && (
+            <img 
+              src="/ui/logo.webp" 
+              alt="Northchild" 
+              style={{ 
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                transform: "translate(-50%, -50%)",
+                width: 300, 
+                opacity: 0.8,
+                filter: "brightness(2)",
+                transition: "opacity 1s ease" 
+              }} 
+            />
+          )}
+
+          {/* Final Result Container */}
           {computedResult && (
-            <div style={{ opacity: fadePhase === "showResult" ? 1 : 0, transition: "opacity 2000ms ease" }}>
-               <img src={getResultImagePath(computedResult.winner.id, computedResult.variant)} alt="Result" style={{ maxWidth: "92vw", maxHeight: "85vh", borderRadius: 12 }} />
+            <div 
+              style={{ 
+                opacity: fadePhase === "showResult" ? 1 : 0, 
+                transition: "opacity 2000ms ease",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "24px",
+                zIndex: 2 // Sits above the logo if they overlap
+              }}
+            >
+               <img 
+                 src={getResultImagePath(computedResult.winner.id, computedResult.variant)} 
+                 alt="Result" 
+                 style={{ maxWidth: "92vw", maxHeight: "75vh", borderRadius: 12 }} 
+               />
+
+               <button
+                  onClick={copyResultToClipboard}
+                  style={{
+                    padding: "14px 28px",
+                    fontSize: "14px",
+                    fontFamily: "var(--font-viking)",
+                    letterSpacing: "0.15em",
+                    borderRadius: "4px",
+                    border: "1px solid #415662",
+                    background: "rgba(65, 86, 98, 0.3)",
+                    color: "#c0ccd3",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(65, 86, 98, 0.6)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(65, 86, 98, 0.3)")}
+                >
+                  COPY FATE TO CLIPBOARD
+                </button>
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
