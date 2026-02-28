@@ -199,7 +199,7 @@ export default function Home() {
                 left: "50%",
                 top: "50%",
                 transform: "translate(-50%, -50%)",
-                width: 300, 
+                width: 600, 
                 opacity: 0.8,
                 filter: "brightness(2)",
                 transition: "opacity 1s ease" 
