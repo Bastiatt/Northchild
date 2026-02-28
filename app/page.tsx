@@ -196,27 +196,11 @@ export default function Home() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            // ALLOW SCROLLING WHEN ZOOMED
+            overflowY: "auto", 
+            padding: "40px 0", // Padding so the button isn't at the very edge
           }}
         >
-          {/* Absolutely Centered Logo */}
-          {(fadePhase === "toBlack" || (fadePhase === "showResult" && !computedResult)) && (
-            <img 
-              src="/ui/logo.webp" 
-              alt="Northchild" 
-              style={{ 
-                position: "absolute",
-                left: "50%",
-                top: "50%",
-                transform: "translate(-50%, -50%)",
-                width: 600, 
-                opacity: 0.8,
-                filter: "brightness(2)",
-                transition: "opacity 1s ease" 
-              }} 
-            />
-          )}
-
-          {/* Final Result Container */}
           {computedResult && (
             <div 
               style={{ 
@@ -226,25 +210,25 @@ export default function Home() {
                 flexDirection: "column",
                 alignItems: "center",
                 gap: "24px",
-                zIndex: 2 // Sits above the logo if they overlap
+                width: "fit-content", // Allow it to take up as much space as the image needs
               }}
             >
-               <img 
-                 src={getResultImagePath(computedResult.winner.id, computedResult.variant)} 
-                 alt="Result" 
-                 style={{ 
-                    maxWidth: "92vw", 
-                    maxHeight: "75vh", 
-                    borderRadius: 12,
-                    // RE-ENABLE INTERACTION HERE:
-                    userSelect: "auto",
-                    WebkitUserSelect: "auto",
-                    pointerEvents: "auto", 
-                    cursor: "zoom-in" // Visual hint that they can interact
-                  }} 
-               />
+              <img 
+                src={getResultImagePath(computedResult.winner.id, computedResult.variant)} 
+                alt="Result" 
+                style={{ 
+                  width: "auto", // Let the image's natural size dictate width
+                  maxWidth: "92vw", 
+                  borderRadius: 12,
+                  // Remove the maxHeight cap to allow it to grow vertically when zoomed
+                  display: "block",
+                  userSelect: "auto",
+                  WebkitUserSelect: "auto",
+                  pointerEvents: "auto",
+                }} 
+              />
 
-               <button
+              <button
                   onClick={copyResultToClipboard}
                   style={{
                     padding: "14px 28px",
@@ -257,6 +241,7 @@ export default function Home() {
                     color: "#c0ccd3",
                     cursor: "pointer",
                     transition: "all 0.3s ease",
+                    marginBottom: "20px" // Extra space at bottom
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(65, 86, 98, 0.6)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(65, 86, 98, 0.3)")}
