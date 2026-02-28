@@ -1,0 +1,20 @@
+<svg id="Submit_button" data-name="Submit button" xmlns="http://www.w3.org/2000/svg" width="600" height="80" viewBox="0 0 600 80">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #3f5362;
+        fill-rule: evenodd;
+      }
+
+      .cls-2 {
+        font-size: 144.445px;
+        fill: #e7dfd5;
+        text-anchor: middle;
+        font-family: Norse;
+        font-weight: 700;
+      }
+    </style>
+  </defs>
+  <path class="cls-1" d="M7.079,11.358H591.921V68.642H7.079V11.358Z"/>
+  <text id="and_thus_the_north_shall_know_its_child" data-name="and thus the north shall know its child" class="cls-2" transform="translate(298.578 50.587) scale(0.254)"><tspan x="0">and thus the north shall know its child</tspan></text>
+</svg>
