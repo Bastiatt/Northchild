@@ -62,7 +62,7 @@ export default function Home() {
     setTimeout(() => {
       setStep(1);
       setTimeout(() => setFadePhase("none"), 100);
-    }, 1200);
+    }, 1800);
   };
 
   const handleStepTransition = () => {
@@ -71,14 +71,14 @@ export default function Home() {
     setTimeout(() => {
       setStep(2);
       setTimeout(() => { setFadePhase("none"); }, 100);
-    }, 2200);
+    }, 2300);
   };
 
   const sealFate = () => {
     const result = computeNorthchildResult(animals, hfCount, gsCount);
     setComputedResult(result);
     setFadePhase("toBlack");
-    setTimeout(() => { setFadePhase("showResult"); }, 2500);
+    setTimeout(() => { setFadePhase("showResult"); }, 2800);
   };
 
   const copyResultToClipboard = async () => {
