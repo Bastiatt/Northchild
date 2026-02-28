@@ -74,39 +74,48 @@ export default function Home() {
     const src = getResultImagePath(computedResult.winner.id, computedResult.variant);
 
     try {
-      const img = new Image();
-      img.crossOrigin = "anonymous"; 
-      img.src = src;
+      // Logic: Safari needs the ClipboardItem created IMMEDIATELY.
+      // We pass a promise that resolves to the Blob.
+      const clipboardPromise = new Promise<Blob>(async (resolve, reject) => {
+        try {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = src;
+          await img.decode(); // Wait for image to be ready
 
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) throw new Error("Canvas context failed");
+          
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("Blob creation failed"));
+          }, "image/png");
+        } catch (e) {
+          reject(e);
+        }
       });
 
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.drawImage(img, 0, 0);
+      // Synchronously create the ClipboardItem (This keeps Safari happy)
+      const data = [
+        new ClipboardItem({
+          "image/png": clipboardPromise,
+        }),
+      ];
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        try {
-          // @ts-ignore
-          const data = [new ClipboardItem({ [blob.type]: blob })];
-          await navigator.clipboard.write(data);
-          alert("Fate copied to clipboard!");
-        } catch (err) {
-          throw err;
-        }
-      }, "image/png");
+      await navigator.clipboard.write(data);
+      alert("Fate copied to clipboard!");
     } catch (err) {
+      console.error("Clipboard Error:", err);
+      // Fallback for older browsers or failed canvas
       try {
         await navigator.clipboard.writeText(window.location.origin + src);
         alert("Link copied to clipboard!");
       } catch {
-        alert("Could not copy. Right-click the image to save.");
+        alert("Please long-press the image to save on this device.");
       }
     }
   };
