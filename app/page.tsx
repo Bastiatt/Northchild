@@ -232,7 +232,16 @@ export default function Home() {
                <img 
                  src={getResultImagePath(computedResult.winner.id, computedResult.variant)} 
                  alt="Result" 
-                 style={{ maxWidth: "92vw", maxHeight: "75vh", borderRadius: 12 }} 
+                 style={{ 
+                    maxWidth: "92vw", 
+                    maxHeight: "75vh", 
+                    borderRadius: 12,
+                    // RE-ENABLE INTERACTION HERE:
+                    userSelect: "auto",
+                    WebkitUserSelect: "auto",
+                    pointerEvents: "auto", 
+                    cursor: "zoom-in" // Visual hint that they can interact
+                  }} 
                />
 
                <button
