@@ -208,15 +208,29 @@ export default function Home() {
             zIndex: 50,
             pointerEvents: fadePhase === "none" ? "none" : "auto",
             display: "flex",
+            flexDirection: "column",
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: "flex-start",
             overflowY: "auto", 
-            padding: "40px 0",
+            padding: "60px 20px",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           {/* Centered Logo during transitions */}
           {fadePhase === "toBlack" && (
-            <img src="/ui/logo.webp" alt="Northchild" style={{ width: 300, opacity: 0.8, filter: "brightness(2)", position: "absolute" }} />
+            <img 
+              src="/ui/logo.webp" 
+              alt="Northchild" 
+              style={{ 
+                width: 300, 
+                opacity: 0.8, 
+                filter: "brightness(2)", 
+                position: "fixed", // Stays in center of screen even if overlay is scrolled
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)"
+              }} 
+            />
           )}
 
           {computedResult && (
