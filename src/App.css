@@ -1,0 +1,472 @@
+@font-face {
+  font-family: 'Norse';
+  src: url('/fonts/norse.woff2') format('woff2');
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: 'Norse-Bold';
+  src: url('/fonts/norse-bold.woff2') format('woff2');
+  font-weight: bold;
+}
+
+@font-face {
+  font-family: 'Viking';
+  src: url('/fonts/viking.woff') format('woff');
+}
+
+/* 1. Force the whole screen to be dark and centered */
+#root, body, html {
+  margin: 0;
+  padding: 0;
+  background-color: #1a1a1a;
+  min-height: 100vh;
+  /* This is the key: allow the browser to overflow in both directions */
+  overflow-x: auto; 
+  overflow-y: auto;
+}
+
+.app-container {
+  /* Remove display: flex entirely */
+  display: block; 
+  width: fit-content; /* Container grows with the card */
+  min-width: 100vw;
+  padding: 80px; /* Provides the "scrolling room" around the card */
+  box-sizing: border-box;
+}
+
+.game-card {
+  position: relative;
+  width: 1024px; /* Your reference width */
+  aspect-ratio: 1024 / 683; 
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+  
+  /* Centers the card when there's room, but allows scrolling when there isn't */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* --- Animal Block Positioning --- */
+
+/* Top Sacrifices (Left to Right) */
+.block-0 { top: 28.1%; left: 2.81%; }   /* Winter-Keeper */
+.block-1 { top: 28.1%; left: 22.86%; }  /* Night-Watcher */
+.block-2 { top: 28.1%; left: 61.99%; }  /* Sky-Warden */
+.block-3 { top: 28.1%; left: 82.10%; }  /* Coil-Weaver */
+
+/* Bottom Sacrifices (Left to Right) */
+.block-4 { top: 67.1%; left: 2.81%; }   /* Pack-Hunter */
+.block-5 { top: 66.9%; left: 21.5%; }  /* Oath-Stag */
+.block-6 { top: 67.2%; left: 61.90%; }  /* Deep-Kin */
+.block-7 { top: 67.2%; left: 81.85%; }  /* Omen-Bearer */
+
+/* Top Row (Winter, Night, Sky, Coil) */
+.row-0 { top: 35.48%; left: 2.62%; }   /* Winter-Keeper Row */
+.row-1 { top: 35.48%; left: 22.64%; }  /* Night-Watcher Row */
+.row-2 { top: 35.48%; left: 61.6%; }  /* Sky-Warden Row */
+.row-3 { top: 35.47%; left: 81.62%; }  /* Coil-Weaver Row */
+
+/* Bottom Row (Pack, Oath, Deep, Omen) */
+.row-4 { top: 56.8%; left: 2.64%; }   /* Pack-Hunter Row */
+.row-5 { top: 56.8%; left: 22.65%; }  /* Oath-Stag Row */
+.row-6 { top: 56.8%; left: 61.61%; }  /* Deep-Kin Row */
+.row-7 { top: 56.8%; left: 81.61%; }  /* Omen-Bearer Row */
+
+/* --- THE SINGLE SQUARES (One per animal) --- */
+.slot-single {
+  position: absolute;
+  width: 2.45%; /* ADJUST SIZE HERE */
+  aspect-ratio: 1 / 1.58;
+  cursor: pointer;
+  z-index: 20;
+}
+
+/* --- THE ROWS OF FOUR --- */
+.slot-row {
+  position: absolute;
+  display: flex;
+  gap: 7.8px; /* ADJUST SPACING BETWEEN THE 4 BOOKS */
+  width: 15.1%; /* ADJUST TOTAL WIDTH OF THE ROW */
+  height: 6.9%; /* ADJUST HEIGHT OF THE ROW */
+  z-index: 5;
+}
+
+/* Style for the individual books inside the row */
+.slot-item {
+  flex: 1;
+  height: 100%;
+  cursor: pointer;
+}
+
+/* The dark, blurry background */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(10px);
+  z-index: 99999;
+  
+  /* Ensure it doesn't care about the card's scroll position */
+  display: block; 
+}
+
+.modal-content {
+  background: #1e1e1e;
+  padding: 30px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 1);
+
+  /* THE NEW CENTERING TRICK */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Moves it back by half its own size */
+  
+  margin: 0;
+  z-index: 100000;
+}
+
+
+.modal-content h3 {
+  margin-top: 0;
+  text-transform: capitalize;
+  font-family: 'Viking', serif; /* Or any Nordic-style font you have */
+  letter-spacing: 3px;
+  color: #e0e0e0;
+  text-align: center;
+}
+
+/* Search Input Styling */
+.modal-content input {
+  width: 100%;
+  padding: 12px;
+  margin: 15px 0;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+/* The Grid of Results */
+.results-grid {
+  margin-top: 20px;
+  max-height: 300px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 15px;
+}
+
+.result-item {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.result-item:hover {
+  transform: scale(1.05);
+}
+
+.result-item img {
+  width: 100%;
+  border-radius: 4px;
+}
+
+/* This forces the book cover to fit perfectly inside your 40px slots */
+.slot-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* This crops the book slightly to fill the square */
+  border-radius: 2px;
+  display: block;
+}
+
+/* Optional: Add a little hover effect so it feels like a game piece */
+.slot-item img:hover {
+  filter: brightness(1.2);
+  transform: scale(1.1);
+  transition: transform 0.2s;
+  z-index: 10;
+}
+
+/* This targets the images in the 4-slot rows */
+.slot-item img, 
+/* This targets the main animal slots (adjust the class name if yours is different) */
+.slot-single img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; 
+  display: block;
+  border-radius: 2px;
+}
+
+/* Ensure the containers themselves don't expand to fit the image */
+.slot-item, .slot-single {
+  overflow: hidden; 
+}
+
+.modal-divider {
+  text-align: center;
+  position: relative;
+  margin: 20px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.modal-divider span {
+  background: #1e1e1e; /* Match your modal background */
+  padding: 0 10px;
+  position: relative;
+  top: 10px;
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* --- Centering and Styling the Phantom Runes --- */
+
+.slot-single, .slot-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Ensure the cursor changes even when the + is invisible */
+  cursor: pointer; 
+}
+
+.slot-single span, 
+.slot-item span {
+  font-family: 'Norse-Bold', sans-serif;
+  font-weight: bold;
+  font-size: 1.8rem; /* Slightly larger for a bold "reveal" */
+  color: #4b576d;
+  
+  /* Completely hidden until summoned */
+  opacity: 0;
+  
+  /* A slightly longer transition for a "fading mist" effect */
+  transition: opacity 0.4s ease, transform 0.3s ease;
+  user-select: none;
+  pointer-events: none; /* Let the click pass through to the slot container */
+}
+
+/* The Hover Reveal */
+.slot-single:hover span, 
+.slot-item:hover span {
+  opacity: 0.6; /* A touch more than 0.4 makes the blue slate pop against the card */
+  transform: scale(1.1);
+  /* Subtlest shadow to give it depth without looking "digital" */
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(15px);
+  z-index: 200000;
+}
+
+.login-content {
+  background: #1e1e1e;
+  padding: 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(75, 87, 109, 0.3); /* Using your Slate Blue */
+  text-align: center;
+  width: 90%;
+  max-width: 350px;
+  box-shadow: 0 0 50px rgba(0,0,0,1);
+}
+
+.login-content input {
+  width: 100%;
+  padding: 15px;
+  margin: 10px 0;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: white;
+  border-radius: 8px;
+  box-sizing: border-box;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.saga-dashboard {
+  position: fixed;
+  bottom: 20px;
+  right: 20px; /* Anchored to the bottom right */
+  display: flex;
+  gap: 30px;   /* This creates the breathing room between them */
+  z-index: 1000;
+}
+
+.dashboard-link {
+  background: none;
+  border: none;
+  color: #e7dfd5; /* Your Slate Blue */
+  font-family: 'Norse', sans-serif;
+  font-size: 0.75rem;
+  cursor: pointer;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  padding: 5px;
+}
+
+.dashboard-link:hover {
+  opacity: 10;
+  text-shadow: 0 0 10px rgba(75, 87, 109, 0.8);
+  transform: translateY(-2px); /* Tiny lift effect on hover */
+}
+
+.ritual-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.ritual-command {
+  font-family: 'Norse', sans-serif;
+  font-size: 0.9rem;
+  color: #e7dfd5; /* Your Slate Blue */
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin: 0 0 4px 0;
+}
+
+.ritual-title {
+  font-family: 'Viking', serif;
+  font-size: 1.9rem; /* Now we can go BIGGER since it's on its own line */
+  color: #e7dfd5;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.ritual-subtitle {
+  font-family: 'Norse', sans-serif;
+  font-size: 0.85rem;
+  color: #e7dfd5;
+  font-style: italic;
+  margin-top: 10px;
+  letter-spacing: 6px;
+  opacity: 0.7;
+}
+
+.rune-cluster {
+  position: absolute;
+  /* Set these to 0 so the children can use the whole card for coordinates */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Let clicks pass through to the runes themselves */
+}
+
+/* Update the base icon to ensure centering is the default */
+.rune-icon {
+  position: absolute;
+  width: 45px; /* Or your preferred size */
+  height: 45px;
+  /* Keep it centered on its coordinates */
+  transform: translate(-50%, -50%); 
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.4s ease;
+}
+
+/* --- HIGHFLAME ACTIVE --- */
+.highflame-cluster .rune-icon.active {
+  opacity: 1;
+  /* We MUST include the translate here so it stays centered while scaling */
+  transform: translate(-50%, -50%) scale(1.1);
+  filter: brightness(0) invert(1) drop-shadow(0 0 15px rgba(255, 255, 255, 0.9));
+}
+
+/* --- GRAVESONG ACTIVE --- */
+.gravesong-cluster .rune-icon.active {
+  opacity: 0.9;
+  /* We MUST include the translate here as well */
+  transform: translate(-50%, -50%) scale(1.1);
+  filter: brightness(0) drop-shadow(0 0 8px rgba(0, 0, 0, 0.8));
+}
+
+/* Update the active state so it doesn't lose the centering */
+.highflame-cluster .rune-icon.active,
+.gravesong-cluster .rune-icon.active {
+  opacity: 1;
+  /* We must keep the translate(-50%, -50%) here too! */
+  transform: translate(-50%, -50%) scale(1.1); 
+}
+
+/* --- Highflame (White/Light) --- */
+.highflame-cluster .rune-icon {
+  filter: brightness(0) invert(1);
+  opacity: 0.15; 
+}
+
+.highflame-cluster .rune-icon:hover {
+  opacity: 0.4;
+}
+
+.highflame-cluster .rune-icon.active {
+  opacity: 1;
+  /* COMBINED TRANSFORM: Centering + Scaling */
+  transform: translate(-50%, -50%) scale(1.1);
+  filter: brightness(0) invert(1) drop-shadow(0 0 15px rgba(255, 255, 255, 0.9));
+}
+
+/* --- Gravesong (Black/Void) --- */
+.gravesong-cluster .rune-icon {
+  filter: brightness(0);
+  opacity: 0.2; 
+  
+  /* ADD THESE TWO LINES TO CHANGE SIZE INDIVIDUALLY */
+  width: 36.4px;  /* Make them larger or smaller than the 45px default */
+  height: 36.4px; 
+}
+
+.gravesong-cluster .rune-icon:hover {
+  opacity: 0.5;
+}
+
+.gravesong-cluster .rune-icon.active {
+  opacity: 0.8;
+  transform: translate(-50%, -50%) scale(1.1);
+  
+  /* 1. Turn the icon black */
+  filter: brightness(0);
+  
+  /* 2. Make the container round so the shadow isn't a square */
+  border-radius: 50%;
+  
+  /* 3. Use box-shadow for a smoother, halo-free glow */
+  /* Format: horizontal vertical blur spread color */
+  box-shadow: 0 0 15px 3px rgba(75, 87, 109, 0.25);
+}
+
+/* --- Highflame Individual Positions (Above the Child) --- */
+.highflame-cluster .rune-icon:nth-child(1) { top: 11%; left: 43.45%; }
+.highflame-cluster .rune-icon:nth-child(2) { top: 11%; left: 55.9%; }
+.highflame-cluster .rune-icon:nth-child(3) { top: 16.1%; left: 49.7%; }
+.highflame-cluster .rune-icon:nth-child(4) { top: 20.75%; left: 43.45%; }
+.highflame-cluster .rune-icon:nth-child(5) { top: 20.75%; left: 55.9%; }
+
+/* --- Gravesong Individual Positions (Below the Child) --- */
+.gravesong-cluster .rune-icon:nth-child(1) { top: 71.35%; left: 43.2%; }
+.gravesong-cluster .rune-icon:nth-child(2) { top: 71.35%; left: 49.5%; }
+.gravesong-cluster .rune-icon:nth-child(3) { top: 71.35%; left: 55.9%; }
+.gravesong-cluster .rune-icon:nth-child(4) { top: 76.15%; left: 46.25%; }
+.gravesong-cluster .rune-icon:nth-child(5) { top: 76.15%; left: 52.75%; }
