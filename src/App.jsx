@@ -245,7 +245,7 @@ function App() {
                     {[0, 1, 2, 3, 4].map(i => (
                       <img 
                         key={`hf-${i}`}
-                        src="/public/runes/highflame.svg" 
+                        src="/runes/highflame.svg" 
                         className={`rune-icon ${slotData[`highflame-${i}`] ? 'active' : ''}`}
                         onClick={() => toggleRune(`highflame-${i}`)}
                         alt="Highflame Rune"
@@ -257,7 +257,7 @@ function App() {
                     {[0, 1, 2, 3, 4].map(i => (
                       <img 
                         key={`gs-${i}`}
-                        src="public/runes/gravesong.svg" 
+                        src="/runes/gravesong.svg" 
                         className={`rune-icon ${slotData[`gravesong-${i}`] ? 'active' : ''}`}
                         onClick={() => toggleRune(`gravesong-${i}`)}
                         alt="Gravesong Rune"
