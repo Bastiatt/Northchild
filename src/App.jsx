@@ -15,6 +15,7 @@ function App() {
   const [activeSlot, setActiveSlot] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
+  const [ritualError, setRitualError] = useState(null); // This was missing!
 
   const animals = [
     'Winter-Keeper', 'Night-Watcher', 'Sky-Warden', 'Coil-Weaver',
@@ -59,7 +60,7 @@ function App() {
       'Sky-Warden': 'Eagle',
       'Coil-Weaver': 'Serpent',
       'Pack-Hunter': 'Wolf',
-      'Oath-Stag': 'Stag',
+      'Oath-Stag': 'Elk',
       'Deep-Kin': 'Orca',
       'Omen-Bearer': 'Raven'
     };
@@ -186,6 +187,22 @@ function App() {
   };
   if (isLoading) return <div style={{background: '#1a1a1a', height: '100vh'}} />;
 
+  const handleSlotClick = (id, animal) => {
+    if (id.includes('slot-')) {
+      const sacrificeKey = `${animal}-text`;
+      if (!slotData[sacrificeKey]) {
+        // Send the data needed for the three lines
+        setRitualError({
+          archetype: getAnimalArchetype(id),
+          name: animal
+        });
+        setTimeout(() => setRitualError(null), 4000);
+        return; 
+      }
+    }
+    setActiveSlot(id);
+  };
+
   return (
     <div className="app-container">
       {!isAuthorized ? (
@@ -218,7 +235,7 @@ function App() {
           <div className="game-card" style={{ backgroundImage: `url(${backgroundCard})` }}>
             {animals.map((animal, index) => (
               <React.Fragment key={animal}>
-                <div className={`slot-single block-${index}`} onClick={() => setActiveSlot(`${animal}-text`)}>
+                <div className={`slot-single block-${index}`} onClick={() => handleSlotClick(`${animal}-text`, animal)}>
                   {slotData[`${animal}-text`] ? (
                     <img src={slotData[`${animal}-text`]} alt="cover" />
                   ) : (
@@ -230,7 +247,7 @@ function App() {
                   {[1, 2, 3, 4].map(num => {
                     const id = `${animal}-slot-${num}`;
                     return (
-                      <div key={id} className="slot-item" onClick={() => setActiveSlot(id)}>
+                      <div key={id} className="slot-item" onClick={() => handleSlotClick(id, animal)}>
                         {slotData[id] ? (
                           <img src={slotData[id]} alt="cover" />
                         ) : (
@@ -319,11 +336,21 @@ function App() {
                   ))}
                 </div>
 
-                {/* 4. THE CLEAR BUTTON */}
+                {/* 4. THE CLEAR BUTTON (Now with the Dashboard aesthetic) */}
                 {slotData[activeSlot] && (
-                  <button onClick={clearSlot} className="clear-button">Clear This Slot</button>
+                  <button onClick={clearSlot} className="clear-button">
+                    Clear This Slot
+                  </button>
                 )}
               </div>
+            </div>
+          )}
+
+          {ritualError && (
+            <div className="ritual-error-toast">
+              <p className="error-path">A book must first be sacrificed to the</p>
+              <h3 className="error-title">{ritualError.name}</h3>
+              <p className="error-must">to open the Path of the {ritualError.archetype}</p>
             </div>
           )}
         </>

@@ -35,18 +35,14 @@
   box-sizing: border-box;
 }
 
+/* --- 1. CORE LAYOUT (Keep these exactly as they are) --- */
 .game-card {
-  position: relative;
-  width: 1024px; /* Your reference width */
+  position: relative !important;
+  width: 1024px;
   aspect-ratio: 1024 / 683; 
   background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-position: center;
+  margin: 0 auto;
   box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-  
-  /* Centers the card when there's room, but allows scrolling when there isn't */
-  margin-left: auto;
-  margin-right: auto;
 }
 
 /* --- Animal Block Positioning --- */
@@ -76,29 +72,49 @@
 .row-7 { top: 56.8%; left: 81.61%; }  /* Omen-Bearer Row */
 
 /* --- THE SINGLE SQUARES (One per animal) --- */
+/* 1. Ensure the containers respect their coordinates */
+/* 1. Constraint for the Single Sacrifice Squares */
 .slot-single {
-  position: absolute;
-  width: 2.45%; /* ADJUST SIZE HERE */
-  aspect-ratio: 1 / 1.58;
-  cursor: pointer;
+  position: absolute !important;
+  width: 2.45% !important; /* Forces it to stay small */
+  aspect-ratio: 1 / 1.58 !important;
   z-index: 20;
+  overflow: hidden; /* Clips the massive image to the box */
 }
 
-/* --- THE ROWS OF FOUR --- */
+/* 2. Constraint for the Fate Rows */
 .slot-row {
-  position: absolute;
-  display: flex;
-  gap: 7.8px; /* ADJUST SPACING BETWEEN THE 4 BOOKS */
-  width: 15.1%; /* ADJUST TOTAL WIDTH OF THE ROW */
-  height: 6.9%; /* ADJUST HEIGHT OF THE ROW */
+  position: absolute !important;
+  width: 15.1% !important; /* Matches your row coordinates */
+  height: 6.9% !important;
+  display: flex !important;
+  gap: 7.8px;
   z-index: 5;
+  overflow: visible; /* Allows hover effects to pop out */
 }
 
-/* Style for the individual books inside the row */
+/* 3. The Individual Book Items inside the row */
 .slot-item {
-  flex: 1;
+  flex: 1; /* Splits that 15.1% width into 4 equal parts */
   height: 100%;
-  cursor: pointer;
+  position: relative;
+  overflow: hidden; /* Clips the massive image here too */
+}
+
+/* 4. The Image Finalizer */
+.slot-single img, .slot-item img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill !important; /* Stretches the book to the slot exactly */
+  display: block;
+}
+
+/* 4. The Image Finalizer */
+.slot-single img, .slot-item img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill !important; /* Stretches the book to the slot exactly */
+  display: block;
 }
 
 /* The dark, blurry background */
@@ -201,12 +217,11 @@
 /* This targets the images in the 4-slot rows */
 .slot-item img, 
 /* This targets the main animal slots (adjust the class name if yours is different) */
-.slot-single img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; 
+.slot-single img, .slot-item img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill !important; /* This forces the cover to fit the ritual square */
   display: block;
-  border-radius: 2px;
 }
 
 /* Ensure the containers themselves don't expand to fit the image */
@@ -377,7 +392,7 @@
 
 /* Update the base icon to ensure centering is the default */
 .rune-icon {
-  position: absolute;
+  position: absolute !important;
   width: 45px; /* Or your preferred size */
   height: 45px;
   /* Keep it centered on its coordinates */
@@ -470,3 +485,100 @@
 .gravesong-cluster .rune-icon:nth-child(3) { top: 71.35%; left: 55.9%; }
 .gravesong-cluster .rune-icon:nth-child(4) { top: 76.15%; left: 46.25%; }
 .gravesong-cluster .rune-icon:nth-child(5) { top: 76.15%; left: 52.75%; }
+
+/* --- 3. RITUAL FEEDBACK --- */
+.ritual-error-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(20, 20, 20, 0.95);
+  padding: 40px 60px; /* Increased horizontal padding for breathing room */
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 1);
+  z-index: 200000;
+  text-align: center;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  
+  /* THE FIX: Increased width and forced no-wrap */
+  min-width: 450px; 
+  white-space: nowrap; 
+  
+  animation: fadeInOut 4s forwards;
+}
+
+.error-title {
+  font-family: 'Viking', serif;
+  font-size: 2.2rem;
+  color: #e7dfd5;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin: 5px 0;
+  line-height: 1.2;
+  /* Extra insurance for the title */
+  display: inline-block;
+}
+.ritual-error-toast .error-path {
+  font-family: 'Norse', sans-serif;
+  font-size: 0.9rem;
+  color: #e7dfd5;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin: 0;
+}
+
+.ritual-error-toast .error-title {
+  font-family: 'Viking', serif;
+  font-size: 2.2rem;
+  color: #e7dfd5;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  margin: 5px 0;
+  line-height: 1.2;
+}
+
+.ritual-error-toast .error-must {
+  font-family: 'Norse', sans-serif;
+  font-size: 0.85rem;
+  color: #e7dfd5;
+  font-style: italic;
+  letter-spacing: 6px;
+  opacity: 0.7;
+  margin: 0;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, -45%); }
+  10%, 90% { opacity: 1; transform: translate(-50%, -50%); }
+  100% { opacity: 0; transform: translate(-50%, -55%); }
+}
+
+.clear-button {
+  background: none !important;
+  border: none !important;
+  color: #e7dfd5; /* Your dashboard Bone color */
+  font-family: 'Norse', sans-serif;
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  transition: all 0.3s ease;
+  
+  /* THE POSITIONAL FIX */
+  position: absolute !important;
+  bottom: 20px; /* Same padding as the modal content */
+  right: 17px; /* Same padding as the modal content */
+  
+  /* THE VISUAL FIX */
+  opacity: 0.25; /* Increased fading from 0.7 for a more subtle look */
+}
+
+.clear-button:hover {
+  opacity: 1; /* Pops on hover, matching dashboard links */
+  text-shadow: 0 0 10px rgba(75, 87, 109, 0.8); /* Slate Blue glow */
+  transform: translateY(-2px); /* Tiny lift effect */
+}
