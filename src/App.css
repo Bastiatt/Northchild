@@ -1079,3 +1079,45 @@
   0% { opacity: 0; filter: blur(4px); }
   100% { opacity: 1; filter: blur(0); }
 }
+
+/* --- GAMEPLAY GUIDE OVERLAY --- */
+.guide-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.9); /* Dark backdrop to focus on the guide */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000; /* Above everything else */
+  cursor: pointer;
+  animation: fadeIn 0.4s ease;
+}
+
+.guide-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.guide-image {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.guide-close-hint {
+  margin-top: 20px;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: 'Norse', sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}

@@ -30,7 +30,8 @@ function App() {
   const [activeSlot, setActiveSlot] = useState(null);
   const [ritualError, setRitualError] = useState(null); 
   const [isChronicleOpen, setIsChronicleOpen] = useState(false);
-  const [chronicleSlotId, setChronicleSlotId] = useState('0'); 
+  const [chronicleSlotId, setChronicleSlotId] = useState('0');
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // --- ENDGAME STATE ---
   const [isEndgameModalOpen, setIsEndgameModalOpen] = useState(false);
@@ -447,6 +448,9 @@ function App() {
             <button onClick={() => setIsChronicleOpen(true)} className="dashboard-link">
               Open Chronicle
             </button>
+            <button onClick={() => setIsGuideOpen(true)} className="dashboard-link">
+              Gameplay Guide
+            </button>
             <button onClick={shareBoard} className="dashboard-link">
               Copy Card Image
             </button>
@@ -517,7 +521,14 @@ function App() {
           setEndgameStep('summary'); 
         }}
       />
-
+      {isGuideOpen && (
+        <div className="guide-overlay" onClick={() => setIsGuideOpen(false)}>
+          <div className="guide-content">
+            <img src="/ui/gameplay.webp" alt="Gameplay Guide" className="guide-image" />
+            <p className="guide-close-hint">Click anywhere to return to the Saga</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
