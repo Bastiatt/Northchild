@@ -35,6 +35,15 @@
   box-sizing: border-box;
 }
 
+/* --- LOCK DOWN THE BOARD (Prevent Accidental Highlighting/Dragging) --- */
+.game-card img,
+.game-card span {
+  user-select: none; /* Prevents the blue highlight box */
+  -webkit-user-select: none; /* Safari support */
+  -moz-user-select: none; /* Firefox support */
+  -webkit-user-drag: none; /* Prevents dragging the image "ghost" */
+}
+
 /* --- 1. CORE LAYOUT (Keep these exactly as they are) --- */
 .game-card {
   position: relative !important;
@@ -46,7 +55,6 @@
 }
 
 /* --- Animal Block Positioning --- */
-
 /* Top Sacrifices (Left to Right) */
 .block-0 { top: 28.1%; left: 2.81%; }   /* Winter-Keeper */
 .block-1 { top: 28.1%; left: 22.86%; }  /* Night-Watcher */
@@ -72,7 +80,6 @@
 .row-7 { top: 56.8%; left: 81.61%; }  /* Omen-Bearer Row */
 
 /* --- THE SINGLE SQUARES (One per animal) --- */
-/* 1. Ensure the containers respect their coordinates */
 /* 1. Constraint for the Single Sacrifice Squares */
 .slot-single {
   position: absolute !important;
@@ -95,26 +102,10 @@
 
 /* 3. The Individual Book Items inside the row */
 .slot-item {
-  flex: 1; /* Splits that 15.1% width into 4 equal parts */
+  flex: 1; 
   height: 100%;
   position: relative;
   overflow: hidden; /* Clips the massive image here too */
-}
-
-/* 4. The Image Finalizer */
-.slot-single img, .slot-item img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: fill !important; /* Stretches the book to the slot exactly */
-  display: block;
-}
-
-/* 4. The Image Finalizer */
-.slot-single img, .slot-item img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: fill !important; /* Stretches the book to the slot exactly */
-  display: block;
 }
 
 /* The dark, blurry background */
@@ -127,8 +118,6 @@
   background: rgba(0, 0, 0, 0.9);
   backdrop-filter: blur(10px);
   z-index: 99999;
-  
-  /* Ensure it doesn't care about the card's scroll position */
   display: block; 
 }
 
@@ -145,17 +134,15 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%); /* Moves it back by half its own size */
-  
+  transform: translate(-50%, -50%); 
   margin: 0;
   z-index: 100000;
 }
 
-
 .modal-content h3 {
   margin-top: 0;
   text-transform: capitalize;
-  font-family: 'Viking', serif; /* Or any Nordic-style font you have */
+  font-family: 'Viking', serif; 
   letter-spacing: 3px;
   color: #e0e0e0;
   text-align: center;
@@ -173,40 +160,16 @@
   box-sizing: border-box;
 }
 
-/* The Grid of Results */
-.results-grid {
-  margin-top: 20px;
-  max-height: 300px;
-  overflow-y: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 15px;
-}
-
-.result-item {
-  cursor: pointer;
-  transition: transform 0.2s;
-}
-
-.result-item:hover {
-  transform: scale(1.05);
-}
-
-.result-item img {
-  width: 100%;
-  border-radius: 4px;
-}
-
-/* This forces the book cover to fit perfectly inside your 40px slots */
-.slot-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover; /* This crops the book slightly to fill the square */
-  border-radius: 2px;
+/* --- MAIN BOARD IMAGE FINALIZER --- */
+.slot-single img, .slot-item img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: fill !important; /* Stretches the book to the slot exactly */
   display: block;
+  border-radius: 2px;
 }
 
-/* Optional: Add a little hover effect so it feels like a game piece */
+/* Optional: Hover effect so it feels like a game piece */
 .slot-item img:hover {
   filter: brightness(1.2);
   transform: scale(1.1);
@@ -214,46 +177,11 @@
   z-index: 10;
 }
 
-/* This targets the images in the 4-slot rows */
-.slot-item img, 
-/* This targets the main animal slots (adjust the class name if yours is different) */
-.slot-single img, .slot-item img {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: fill !important; /* This forces the cover to fit the ritual square */
-  display: block;
-}
-
-/* Ensure the containers themselves don't expand to fit the image */
-.slot-item, .slot-single {
-  overflow: hidden; 
-}
-
-.modal-divider {
-  text-align: center;
-  position: relative;
-  margin: 20px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-.modal-divider span {
-  background: #1e1e1e; /* Match your modal background */
-  padding: 0 10px;
-  position: relative;
-  top: 10px;
-  font-size: 0.8rem;
-  color: #666;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
 /* --- Centering and Styling the Phantom Runes --- */
-
 .slot-single, .slot-item {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* Ensure the cursor changes even when the + is invisible */
   cursor: pointer; 
 }
 
@@ -261,89 +189,166 @@
 .slot-item span {
   font-family: 'Norse-Bold', sans-serif;
   font-weight: bold;
-  font-size: 1.8rem; /* Slightly larger for a bold "reveal" */
+  font-size: 1.8rem; 
   color: #4b576d;
   
   /* Completely hidden until summoned */
   opacity: 0;
-  
-  /* A slightly longer transition for a "fading mist" effect */
   transition: opacity 0.4s ease, transform 0.3s ease;
   user-select: none;
-  pointer-events: none; /* Let the click pass through to the slot container */
+  pointer-events: none; 
 }
 
 /* The Hover Reveal */
 .slot-single:hover span, 
 .slot-item:hover span {
-  opacity: 0.6; /* A touch more than 0.4 makes the blue slate pop against the card */
+  opacity: 0.6; 
   transform: scale(1.1);
-  /* Subtlest shadow to give it depth without looking "digital" */
   text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
 }
 
-.login-overlay {
+/* ========================================================= */
+/* --- THE THRESHOLD LOGIN SCREEN --- */
+/* ========================================================= */
+
+.login-screen {
   position: fixed;
   inset: 0;
+  z-index: 200000;
+  background-color: #0b111a; /* Dark atmospheric backdrop */
+  
+  overflow: auto;
+  padding: 40px;
+  box-sizing: border-box;
+  
   display: flex;
   justify-content: center;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.95);
-  backdrop-filter: blur(15px);
-  z-index: 200000;
+  align-items: center; /* Centers the whole image in the viewport */
+  transition: opacity 2s ease, filter 2s ease;
 }
 
-.login-content {
-  background: #1e1e1e;
-  padding: 40px;
-  border-radius: 20px;
-  border: 1px solid rgba(75, 87, 109, 0.3); /* Using your Slate Blue */
-  text-align: center;
-  width: 90%;
-  max-width: 350px;
-  box-shadow: 0 0 50px rgba(0,0,0,1);
+.login-screen.fade-out {
+  opacity: 0;
+  filter: blur(10px); /* Adds a subtle dissolving effect */
+  pointer-events: none; /* Stops players from clicking things while it fades */
 }
 
-.login-content input {
-  width: 100%;
-  padding: 15px;
-  margin: 10px 0;
-  background: #2a2a2a;
-  border: 1px solid #444;
-  color: white;
-  border-radius: 8px;
-  box-sizing: border-box;
-  font-size: 1.1rem;
-  text-align: center;
+/* THE LOCKED ECOSYSTEM */
+.login-container {
+  margin: auto; 
+  width: 95vw;
+  max-width: 1200px;
+  /* Unlock Container Queries */
+  container-type: inline-size; 
+  
+  aspect-ratio: 16 / 9; /* Assuming standard 16:9 for your image */
+  position: relative;
+  
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.9);
 }
 
-.saga-dashboard {
-  position: fixed;
-  bottom: 20px;
-  right: 20px; /* Anchored to the bottom right */
+/* --- THE FORM PLACEMENT --- */
+.login-form-area {
+  position: absolute;
+  bottom: 11.7%; 
+  left: 68.5%; /* Centers it in the right-hand panel */
+  transform: translateX(-50%);
+  
+  width: 24cqw; /* How wide the input boxes are */
+}
+
+.login-form-area form {
   display: flex;
-  gap: 30px;   /* This creates the breathing room between them */
-  z-index: 1000;
+  flex-direction: column;
+  gap: 1cqw; /* Space between the inputs */
+}
+
+/* --- ATMOSPHERIC INPUT STYLING --- */
+.login-form-area input {
+  width: 100%;
+  padding: 1.2cqw;
+  background: rgba(15, 25, 35, 0.4); /* Dark frosted glass */
+  border: 1px solid rgba(231, 223, 213, 0.2);
+  color: #e7dfd5;
+  border-radius: 2px;
+  box-sizing: border-box;
+  
+  font-family: 'Norse', sans-serif;
+  font-size: 1.4cqw;
+  text-align: center;
+  letter-spacing: 0.2cqw;
+  transition: all 0.3s ease;
+}
+
+.login-form-area input:focus {
+  outline: none;
+  background: rgba(15, 25, 35, 0.7);
+  border-color: rgba(231, 223, 213, 0.6);
+  box-shadow: 0 0 15px rgba(231, 223, 213, 0.1);
+}
+
+.login-form-area input::placeholder {
+  color: rgba(231, 223, 213, 0.3);
+}
+
+/* --- THE SUBMIT BUTTON --- */
+.login-submit-btn {
+  margin-top: 1cqw;
+  background: none;
+  border: 1px solid rgba(231, 223, 213, 0.4);
+  color: #e7dfd5;
+  
+  font-family: 'Viking', serif;
+  font-size: 1.2cqw;
+  letter-spacing: 0.15cqw;
+  
+  /* Increased horizontal padding so the text doesn't hug the border */
+  padding: 1cqw 2cqw; 
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  /* THE WIDTH FIX */
+  white-space: nowrap; /* Forces the text to stay on one line */
+  width: max-content;  /* Allows the button to grow beyond the 25cqw form width */
+  align-self: center;  /* Keeps the button perfectly centered under the inputs */
+}
+
+.login-submit-btn:hover {
+  background: rgba(231, 223, 213, 0.1);
+  box-shadow: 0 0 15px rgba(231, 223, 213, 0.3);
+  transform: translateY(-2px);
+}
+
+/* --- THE MINIMALIST SAGA DASHBOARD --- */
+.saga-dashboard {
+  display: flex;
+  justify-content: center;
+  gap: 60px; /* Wide, airy gap between options */
+  margin-top: 40px; /* Pushes it safely below the bottom edge of the game card */
+  width: 100%;
 }
 
 .dashboard-link {
   background: none;
   border: none;
-  color: #e7dfd5; /* Your Slate Blue */
+  color: #e7dfd5; 
   font-family: 'Norse', sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.95rem; /* A touch larger since it doesn't have a container */
   cursor: pointer;
-  opacity: 0.8;
+  opacity: 0.4; 
   text-transform: uppercase;
-  letter-spacing: 2px;
-  transition: all 0.3s ease;
-  padding: 5px;
+  letter-spacing: 5px;
+  transition: all 0.4s ease;
+  padding: 10px;
 }
 
 .dashboard-link:hover {
-  opacity: 10;
-  text-shadow: 0 0 10px rgba(75, 87, 109, 0.8);
-  transform: translateY(-2px); /* Tiny lift effect on hover */
+  opacity: 1;
+  text-shadow: 0 0 15px rgba(231, 223, 213, 0.6); 
+  transform: translateY(-2px); 
 }
 
 .ritual-header {
@@ -354,7 +359,7 @@
 .ritual-command {
   font-family: 'Norse', sans-serif;
   font-size: 0.9rem;
-  color: #e7dfd5; /* Your Slate Blue */
+  color: #e7dfd5; 
   text-transform: uppercase;
   letter-spacing: 4px;
   margin: 0 0 4px 0;
@@ -382,7 +387,6 @@
 
 .rune-cluster {
   position: absolute;
-  /* Set these to 0 so the children can use the whole card for coordinates */
   top: 0;
   left: 0;
   width: 100%;
@@ -390,12 +394,10 @@
   pointer-events: none; /* Let clicks pass through to the runes themselves */
 }
 
-/* Update the base icon to ensure centering is the default */
 .rune-icon {
   position: absolute !important;
   width: 45px; /* Or your preferred size */
   height: 45px;
-  /* Keep it centered on its coordinates */
   transform: translate(-50%, -50%); 
   cursor: pointer;
   pointer-events: auto;
@@ -405,7 +407,6 @@
 /* --- HIGHFLAME ACTIVE --- */
 .highflame-cluster .rune-icon.active {
   opacity: 1;
-  /* We MUST include the translate here so it stays centered while scaling */
   transform: translate(-50%, -50%) scale(1.1);
   filter: brightness(0) invert(1) drop-shadow(0 0 15px rgba(255, 255, 255, 0.9));
 }
@@ -413,17 +414,8 @@
 /* --- GRAVESONG ACTIVE --- */
 .gravesong-cluster .rune-icon.active {
   opacity: 0.9;
-  /* We MUST include the translate here as well */
   transform: translate(-50%, -50%) scale(1.1);
-  filter: brightness(0) drop-shadow(0 0 8px rgba(0, 0, 0, 0.8));
-}
-
-/* Update the active state so it doesn't lose the centering */
-.highflame-cluster .rune-icon.active,
-.gravesong-cluster .rune-icon.active {
-  opacity: 1;
-  /* We must keep the translate(-50%, -50%) here too! */
-  transform: translate(-50%, -50%) scale(1.1); 
+  filter: brightness(0) drop-shadow(0 0 15px rgba(51, 51, 50, 0.8));
 }
 
 /* --- Highflame (White/Light) --- */
@@ -436,40 +428,16 @@
   opacity: 0.4;
 }
 
-.highflame-cluster .rune-icon.active {
-  opacity: 1;
-  /* COMBINED TRANSFORM: Centering + Scaling */
-  transform: translate(-50%, -50%) scale(1.1);
-  filter: brightness(0) invert(1) drop-shadow(0 0 15px rgba(255, 255, 255, 0.9));
-}
-
 /* --- Gravesong (Black/Void) --- */
 .gravesong-cluster .rune-icon {
   filter: brightness(0);
   opacity: 0.2; 
-  
-  /* ADD THESE TWO LINES TO CHANGE SIZE INDIVIDUALLY */
   width: 36.4px;  /* Make them larger or smaller than the 45px default */
   height: 36.4px; 
 }
 
 .gravesong-cluster .rune-icon:hover {
   opacity: 0.5;
-}
-
-.gravesong-cluster .rune-icon.active {
-  opacity: 0.8;
-  transform: translate(-50%, -50%) scale(1.1);
-  
-  /* 1. Turn the icon black */
-  filter: brightness(0);
-  
-  /* 2. Make the container round so the shadow isn't a square */
-  border-radius: 50%;
-  
-  /* 3. Use box-shadow for a smoother, halo-free glow */
-  /* Format: horizontal vertical blur spread color */
-  box-shadow: 0 0 15px 3px rgba(75, 87, 109, 0.25);
 }
 
 /* --- Highflame Individual Positions (Above the Child) --- */
@@ -503,8 +471,6 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  
-  /* THE FIX: Increased width and forced no-wrap */
   min-width: 450px; 
   white-space: nowrap; 
   
@@ -519,9 +485,9 @@
   letter-spacing: 4px;
   margin: 5px 0;
   line-height: 1.2;
-  /* Extra insurance for the title */
   display: inline-block;
 }
+
 .ritual-error-toast .error-path {
   font-family: 'Norse', sans-serif;
   font-size: 0.9rem;
@@ -529,16 +495,6 @@
   text-transform: uppercase;
   letter-spacing: 4px;
   margin: 0;
-}
-
-.ritual-error-toast .error-title {
-  font-family: 'Viking', serif;
-  font-size: 2.2rem;
-  color: #e7dfd5;
-  text-transform: uppercase;
-  letter-spacing: 4px;
-  margin: 5px 0;
-  line-height: 1.2;
 }
 
 .ritual-error-toast .error-must {
@@ -570,10 +526,8 @@
   
   /* THE POSITIONAL FIX */
   position: absolute !important;
-  bottom: 20px; /* Same padding as the modal content */
+  bottom: 10px; /* Same padding as the modal content */
   right: 17px; /* Same padding as the modal content */
-  
-  /* THE VISUAL FIX */
   opacity: 0.25; /* Increased fading from 0.7 for a more subtle look */
 }
 
@@ -581,4 +535,547 @@
   opacity: 1; /* Pops on hover, matching dashboard links */
   text-shadow: 0 0 10px rgba(75, 87, 109, 0.8); /* Slate Blue glow */
   transform: translateY(-2px); /* Tiny lift effect */
+}
+
+/* ========================================================= */
+/* --- CHRONICLE BROADCAST MODAL (The Obolus Standard) --- */
+/* ========================================================= */
+
+.ledger-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(10, 10, 12, 0.95);
+  backdrop-filter: blur(12px);
+  z-index: 150000; /* Safely above the board, below the login/errors */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 1. SELECTION DROPDOWN HEADER */
+.broadcast-controls-header {
+  margin-bottom: 30px;
+  z-index: 150005;
+}
+
+.custom-dropdown-selected {
+  font-family: 'Norse', sans-serif;
+  font-size: 1.2rem;
+  color: #e7dfd5; /* Matches your Slate Blue/Bone theme */
+  letter-spacing: 4px;
+  cursor: pointer;
+  padding: 10px 20px;
+  border: 1px solid rgba(75, 87, 109, 0.5);
+  border-radius: 4px;
+  background: rgba(30, 30, 30, 0.8);
+  transition: all 0.3s ease;
+}
+
+.custom-dropdown-selected:hover {
+  background: rgba(75, 87, 109, 0.3);
+  box-shadow: 0 0 15px rgba(75, 87, 109, 0.4);
+}
+
+/* 2. THE CAPTURE FRAME */
+.northchild-frame {
+  width: 960px; 
+  aspect-ratio: 16 / 9;
+  background-size: cover; 
+  background-position: center;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.1), 
+              0 30px 60px rgba(0, 0, 0, 0.9);
+              
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* Pushes content down below your baked-in logo */
+.northchild-hero-stage {
+  flex: 1;
+  width: 100%;            
+  display: flex;
+  align-items: center;   
+  justify-content: center;
+  gap: 150px; 
+  margin-top: 12%; 
+}
+
+/* 3. THE COLUMNS */
+.northchild-hero-lane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 320px;
+}
+
+.northchild-lane-header {
+  font-family: 'Viking', serif; /* Utilizing your existing custom font */
+  font-size: 2.2rem;
+  color: #050505; /* Dark text to contrast the snow in your webp */
+  letter-spacing: 4px;
+  text-align: center;
+  margin: 0 0 25px 0;
+  text-transform: uppercase;
+}
+
+.hero-placeholder {
+  font-family: 'Norse', sans-serif;
+  color: rgba(114, 113, 113, 0.6); /* Faded white for better contrast on snow */
+  font-size: 1.5rem;
+  letter-spacing: 4px;
+  
+  /* The Rigid Box */
+  height: 230px !important; 
+  width: 155px !important;
+  border: 2px dashed rgba(114, 113, 113, 0.4);
+  border-radius: 4px;
+  margin-top: 10px;
+  
+  /* Flexbox to perfectly center the text inside the box */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px; /* Gives the text a little breathing room from the dashed edge */
+  box-sizing: border-box; /* Ensures the padding doesn't inflate your 150x230 size */
+  transform: translate(-21px, -25px);
+}
+
+/* 5. ANCHORED BOTTOM CONTROLS (Inside the Modal) */
+.subdued-controls {
+  margin-top: 40px;
+  display: flex;
+  gap: 30px;
+}
+
+.meta-btn {
+  background: none;
+  border: 1px solid rgba(75, 87, 109, 0.5);
+  color: #e7dfd5;
+  font-family: 'Norse', sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  padding: 12px 24px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.meta-btn:hover {
+  background: rgba(75, 87, 109, 0.2);
+  box-shadow: 0 0 15px rgba(75, 87, 109, 0.4);
+  transform: translateY(-2px);
+}
+
+/* --- INLINE TITLE DROPDOWN --- */
+
+.title-dropdown {
+  cursor: pointer;
+  position: relative; 
+  transition: text-shadow 0.3s ease;
+  font-size: 1.74rem; 
+  letter-spacing: -1px;
+  transform: translate(19px, 21px); 
+  margin-bottom: 75px; /* Tweak this to push/pull the glyph below it */
+  white-space: nowrap;
+  z-index: 50;
+}
+
+.dropdown-arrow {
+  font-family: sans-serif; /* Keeps the arrow clean and readable */
+  font-size: 1rem;
+  margin-left: 12px;
+  vertical-align: middle;
+  opacity: 0.6;
+}
+
+.inline-list {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200000;
+  width: max-content;
+  min-width: 200px;
+  background: rgba(20, 20, 22, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 10px 0;
+  border-radius: 4px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9);
+  
+  /* Resetting list styles */
+  list-style: none;
+  margin: 10px 0 0 0;
+}
+
+.inline-list .custom-dropdown-item {
+  font-family: 'Norse', sans-serif;
+  font-size: 1.2rem;
+  color: #e7dfd5;
+  padding: 10px 20px;
+  text-align: center;
+  transition: all 0.2s ease;
+  letter-spacing: 3px;
+}
+
+.inline-list .custom-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* --- GLYPH SIZING AND POSITIONING --- */
+.northchild-animal-art {
+  height: auto !important;
+  width: 235px !important; 
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); 
+  /* THIS IS THE MAGIC MOVER */
+  transform: translate(8px, -46px); 
+}
+
+.northchild-book-art {
+  /* Use this transform if the book also needs to be nudged to align with the glyph */
+  transform: translate(0px, 0px);
+}
+
+/* ========================================= */
+/* --- RIGHT LANE: BOOK SPECIFIC CONTROLS --- */
+/* ========================================= */
+
+/* 1. THE BOOK TITLE TEXT */
+.book-title-nudge {
+  font-size: 1.75rem;       /* Tweak to match or contrast the glyph title */
+  letter-spacing: -1px;     
+  margin-bottom: 25px;     /* Controls the gap between "BOOK ONE" and the cover */
+  transform: translate(-7px, -0px); /* Move the text X (left/right) and Y (up/down) */
+}
+
+/* 2. THE BOOK COVER IMAGE */
+.northchild-book-art {
+  height: 230px !important; 
+  width: 150px !important;
+  
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
+  border: 3px solid rgba(10, 0, 0, 0.8); 
+  border-radius: 4px;
+  
+  /* THE MAGIC MOVER */
+  transform: translate(-20px, -19px); 
+}
+
+/* ========================================================= */
+/* --- ENDGAME RITUAL SCREEN --- */
+/* ========================================================= */
+
+.endgame-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 200000;
+  background-color: #1a1a1a; /* Dark backdrop */
+  
+  /* 1. Allow scrolling instead of trapping the zoomed pixels */
+  overflow: auto;
+  padding: 40px;
+  box-sizing: border-box;
+  
+  /* 2. Safe flex alignment that doesn't clip the top when zoomed */
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; 
+}
+
+.endgame-summary-container {
+  margin: auto; 
+  
+  /* THE HOLISTIC FIX: Responsive width + Container Query */
+  width: 95vw;
+  max-width: 1200px;
+  container-type: inline-size; /* <--- THIS UNLOCKS CQW UNITS */
+  
+  aspect-ratio: 16 / 10.5; 
+  position: relative;
+  
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.9);
+  border-radius: 4px;
+}
+
+/* --- THE RIGID STENCIL GRID (Right Side) --- */
+.animal-column {
+  position: absolute;
+  width: 9%; /* Width of the column "hitbox" */
+  height: 40%;
+}
+
+/* --- X-AXIS (Horizontal Columns) --- */
+.bear, .wolf    { left: 19.35%;  }
+.owl, .elk      { left: 39.3%; }
+.eagle, .orca   { left: 59.3%; }
+.serpent, .raven { left: 79.5%; }
+
+/* --- Y-AXIS (Row Grouping) --- */
+.endgame-stencil-row.top    { position: absolute; top: 6.5%; right: -0.5%; width: 42%; height: 40%; }
+.endgame-stencil-row.bottom { position: absolute; bottom: 5.5%; right: -0.5%; width: 42%; height: 40%; }
+
+.stencil-glyph {
+  position: absolute;
+  width: 135%;
+  aspect-ratio: 1/1;
+}
+
+/* --- THE TOP ROW: STACKING DOWNWARD --- */
+.top .slot-0 { top: 23%; }
+.top .slot-1 { top: 74%; }
+.top .slot-2 { top: 125%; }
+.top .slot-3 { top: 178%; }
+
+/* --- THE BOTTOM ROW: STACKING UPWARD --- */
+/* Here, Slot 0 is the physical bottom of the column */
+.bottom .slot-0 { bottom: -133%; } 
+.bottom .slot-1 { bottom: -80%; }
+.bottom .slot-2 { bottom: -28%; }
+.bottom .slot-3 { bottom: 25%; }
+
+/* Base Title Aesthetics (Stripped of position) */
+.endgame-spirit-title {
+  font-family: 'Viking', serif;
+  font-size: 1.08cqw; 
+  letter-spacing: -0.0cqw;
+  color: #404e6a;
+  text-align: center; 
+  white-space: pre-wrap;
+  line-height: 1.5;
+
+  position: absolute;
+  width: max-content; 
+  pointer-events: none;
+  z-index: 10;
+  
+  /* Baseline centering */
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ========================================= */
+/* --- TOP ROW TITLE CONTROLS --- */
+/* ========================================= */
+.bear .endgame-spirit-title { top: -10.5%; margin-left: 0.4cqw; } /* Replaces 5px */
+.owl .endgame-spirit-title { top: -10.5%; margin-left: 0.6cqw; } /* Replaces 7px */
+.eagle .endgame-spirit-title { top: -10.5%; margin-left: 0.6cqw; } /* Replaces 7px */
+.serpent .endgame-spirit-title { top: -10.5%; margin-left: 0.6cqw; } /* Replaces 7px */
+
+/* ========================================= */
+/* --- BOTTOM ROW TITLE CONTROLS --- */
+/* ========================================= */
+.wolf .endgame-spirit-title { bottom: -169%; margin-left: 0.66cqw; } /* Replaces 8px */
+.elk .endgame-spirit-title { bottom: -169%; margin-left: 0.66cqw; } /* Replaces 8px */
+.orca .endgame-spirit-title { bottom: -169%; margin-left: 0.66cqw; } /* Replaces 8px */
+.raven .endgame-spirit-title { bottom: -169%; margin-left: 0.66cqw; } /* Replaces 8px */
+
+/* Also ensure the middle banner fits perfectly between the percent blocks */
+/* --- THE RUNE BANNER (Middle) --- */
+.endgame-rune-banner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* Allows you to click things underneath if needed */
+}
+
+/* Base styles for the icons */
+.endgame-banner-icon {
+  position: absolute;
+  /* Filters carry over from your original setup */
+}
+
+.endgame-banner-icon.hf-icon { 
+  filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4)); /* Just a natural shadow for depth */
+}
+
+.endgame-banner-icon.gs-icon { 
+  filter: drop-shadow(0 5px 10px rgba(0,0,0,0.4));
+}
+
+/* Base styles for the text */
+.endgame-banner-text {
+  position: absolute;
+  font-family: 'Norse-Bold', sans-serif;
+  color: #404e6a; /* Slate Blue - adjust as needed for the parchment */
+  letter-spacing: 0.1px;
+  /* Use vw for zoom-proof scaling */
+  font-size: 6px; 
+}
+
+/* ========================================= */
+/* --- HIGHFLAME INDEPENDENT CONTROLS --- */
+/* ========================================= */
+.hf-icon {
+  width: 8.0%;  /* SIZING: Adjust emblem size */
+  top: 45.0%;    /* Y-AXIS: Move emblem up/down */
+  left: 69.2%;   /* X-AXIS: Move emblem left/right */
+}
+
+.hf-text {
+  top: 46.25%;    /* Y-AXIS: Move text up/down */
+  left: 80.1%;   /* X-AXIS: Move text left/right */
+  font-size: 4.33cqw; /* Override base font size just for Highflame if needed */
+  letter-spacing: 0.25cqw;
+}
+
+/* ========================================= */
+/* --- GRAVESONG INDEPENDENT CONTROLS --- */
+/* ========================================= */
+.gs-icon {
+  width: 8.1%;  /* SIZING: Adjust emblem size */
+  top: 45.0%;    /* Y-AXIS: Move emblem up/down */
+  left: 86.48%;   /* X-AXIS: Move emblem left/right */
+}
+
+.gs-text {
+  top: 45.85%;    /* Y-AXIS: Move text up/down */
+  left: 66.50%;   /* X-AXIS: Move text left/right */
+  font-size: 4.33cqw; /* Override base font size just for Gravesong if needed */
+  letter-spacing: 0.26cqw;
+}
+
+/* --- FINAL SUBMIT BUTTON --- */
+.endgame-submit-btn {
+  /* PLACEMENT CONTROLS */
+  position: absolute;
+  bottom: 4.1%; /* Adjust this to move the button UP or DOWN */
+  left: 45.5%;
+  transform: translateX(-50%); /* Keeps it perfectly centered */
+  
+  /* Strip all default HTML button styling */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 100;
+}
+
+/* SIZING AND HOVER CONTROLS */
+.submit-btn-img {
+  width: 32.5cqw; /* Adjust this to make the button LARGER or SMALLER */
+  height: auto;
+  transition: all 0.3s ease;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.6)); /* Deep shadow for depth against the parchment */
+}
+
+.endgame-submit-btn:hover .submit-btn-img {
+  transform: scale(1.03);
+  /* Optional: Adds a subtle slate-blue glow behind the image on hover */
+  filter: drop-shadow(0 0 25px rgba(64, 78, 106, 0.5)); 
+}
+
+.endgame-result-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  /* THE CONTAINER QUERY FIX */
+  width: 85vw;
+  max-width: 650px; /* Locks the max size of the portrait card */
+  container-type: inline-size; /* Unlocks cqw scaling */
+  
+  animation: endgameFadeIn 2s ease forwards;
+}
+
+.endgame-final-graphic {
+  width: 100%; /* Forces the image to exactly fill our new locked container */
+  height: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+  border-radius: 8px;
+}
+
+/* --- THE ZOOM-PROOF BUTTONS --- */
+.endgame-result-controls {
+  display: flex;
+  gap: 3cqw;       /* Replaces the hardcoded 20px gap */
+  margin-top: 4cqw; /* Replaces the hardcoded 30px margin */
+}
+
+/* We target just the buttons inside this container so we don't break your Broadcast modal */
+.endgame-result-controls .meta-btn {
+  font-size: 2cqw;        /* Replaces 0.85rem */
+  padding: 1.5cqw 3cqw;   /* Replaces 12px 24px */
+  border-radius: 0.5cqw;  /* Replaces 4px */
+  border: 1px solid rgba(75, 87, 109, 0.5); 
+}
+
+/* --- THE ESCAPE HATCH (Return to Board) --- */
+.endgame-return-btn {
+  position: absolute;
+  bottom: 0.5%;
+  left: 38.5%;
+  background: none;
+  border: none;
+  
+  color: #404e6a; /* Slate Blue */
+  font-family: 'Norse', sans-serif;
+  font-size: 1.5cqw;
+  letter-spacing: 0.2cqw;
+  text-transform: uppercase;
+  
+  cursor: pointer;
+  z-index: 200;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.endgame-return-btn:hover {
+  opacity: 1;
+  transform: scale(1.05);
+  text-shadow: 0 0 10px rgba(64, 78, 106, 0.4);
+}
+
+/* --- SEAL THE SAGA: ON-CARD BUTTON --- */
+.seal-saga-btn {
+  position: absolute;
+  left: 50%;
+  bottom: 2.0%; /* Tweak this up or down to cover the "Destiny Written" text perfectly */
+  transform: translateX(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  z-index: 100; 
+  
+  /* The slow, dramatic fade-in */
+  animation: sealSagaFade 2s ease forwards;
+}
+
+/* Style the image itself */
+.seal-saga-btn img {
+  width: 210px; /* Adjust this based on how large you want the image to render */
+  height: auto;
+  transition: all 0.4s ease;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.5)); /* Base shadow for depth against the snow */
+}
+
+/* The Hover Effect */
+.seal-saga-btn:hover img {
+  transform: scale(1.03);
+  /* Optional: Adds a subtle gold glow behind the image on hover */
+  filter: drop-shadow(0 0 25px rgba(230, 227, 223, 0.5)); 
+}
+
+@keyframes sealSagaFade {
+  0% { opacity: 0; filter: brightness(0); }
+  100% { opacity: 1; filter: brightness(1); }
+}
+
+@keyframes endgameFadeIn {
+  0% { opacity: 0; filter: blur(4px); }
+  100% { opacity: 1; filter: blur(0); }
 }

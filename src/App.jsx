@@ -1,25 +1,59 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { supabase } from './supabaseClient';
 import './App.css';
 import backgroundCard from './ui/northchild-card.webp';
+import nameButtonImg from './ui/name_button.webp';
+import entranceBg from './ui/entrance_bg.webp';
 import html2canvas from 'html2canvas';
+import BroadcastModal from './components/BroadcastModal';
+import EndgameModal from './components/EndgameModal';
+import { computeNorthchildResult } from './northchildMechanics';
+
+// Animal Glyph imports
+import bearGlyph from './assets/bear_glyph.webp';
+import owlGlyph from './assets/owl_glyph.webp';
+import eagleGlyph from './assets/eagle_glyph.webp';
+import serpentGlyph from './assets/serpent_glyph.webp';
+import wolfGlyph from './assets/wolf_glyph.webp';
+import stagGlyph from './assets/stag_glyph.webp';
+import orcaGlyph from './assets/orca_glyph.webp';
+import ravenGlyph from './assets/raven_glyph.webp';
 
 function App() {
   const [sagaName, setSagaName] = useState('');
   const [pin, setPin] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [slotData, setSlotData] = useState({});
   const [boardId, setBoardId] = useState(null);
   const [activeSlot, setActiveSlot] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [ritualError, setRitualError] = useState(null); // This was missing!
+  const [ritualError, setRitualError] = useState(null); 
+  const [isChronicleOpen, setIsChronicleOpen] = useState(false);
+  const [chronicleSlotId, setChronicleSlotId] = useState('0'); 
+
+  // --- ENDGAME STATE ---
+  const [isEndgameModalOpen, setIsEndgameModalOpen] = useState(false);
+  const [endgameStep, setEndgameStep] = useState('summary'); // 'summary' or 'result'
+  const [computedResult, setComputedResult] = useState(null);
+  const fateBookCount = Object.keys(slotData).filter(key => key.includes('-slot-') && slotData[key]).length;
+  const isEndgameReady = fateBookCount >= 15;
 
   const animals = [
     'Winter-Keeper', 'Night-Watcher', 'Sky-Warden', 'Coil-Weaver',
     'Pack-Hunter', 'Oath-Stag', 'Deep-Kin', 'Omen-Bearer'
+  ];
+
+// This maps exactly to the data the BroadcastModal expects
+  const animalData = [
+    { id: '0', name: 'Winter-Keeper', role: 'BEAR' },
+    { id: '1', name: 'Night-Watcher', role: 'OWL' },
+    { id: '2', name: 'Sky-Warden', role: 'EAGLE' },
+    { id: '3', name: 'Coil-Weaver', role: 'SERPENT' },
+    { id: '4', name: 'Pack-Hunter', role: 'WOLF' },
+    { id: '5', name: 'Oath-Stag', role: 'STAG' },
+    { id: '6', name: 'Deep-Kin', role: 'ORCA' },
+    { id: '7', name: 'Omen-Bearer', role: 'RAVEN' }
   ];
 
   const toggleRune = async (id) => {
@@ -41,16 +75,54 @@ function App() {
 
   const shareBoard = async () => {
     const element = document.querySelector('.game-card');
-    const canvas = await html2canvas(element, {
-      backgroundColor: null, // Keeps transparency if you have any
-      scale: 2, // High resolution for Discord
-    });
+    if (!element) return;
 
-    canvas.toBlob((blob) => {
-      const item = new ClipboardItem({ 'image/png': blob });
-      navigator.clipboard.write([item]);
-      alert("The Saga image has been copied to your clipboard!");
-    });
+    // 1. Grab all the images on the main board
+    const images = element.querySelectorAll('img');
+    const originalSrcs = [];
+
+    try {
+      // 2. Route external book covers through the CORS proxy (ignoring local runes)
+      const loadPromises = Array.from(images).map((img) => {
+        const isExternal = img.src.includes('http') && !img.src.includes(window.location.origin);
+
+        if (isExternal && !img.src.includes('wsrv.nl')) {
+          originalSrcs.push({ img, src: img.src });
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+            img.src = `https://wsrv.nl/?url=${encodeURIComponent(img.src)}`;
+          });
+        }
+        return Promise.resolve();
+      });
+
+      await Promise.all(loadPromises);
+
+      // 3. Capture the board with CORS enabled
+      const canvas = await html2canvas(element, {
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: null, // Keeps transparency if you have any
+        scale: 2, // High resolution
+      });
+
+      // 4. Instantly revert the image sources back to normal for the live DOM
+      originalSrcs.forEach(({ img, src }) => { img.src = src; });
+
+      // 5. Copy to clipboard
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const item = new ClipboardItem({ 'image/png': blob });
+        await navigator.clipboard.write([item]);
+        alert("The Saga image has been copied to your clipboard!");
+      }, 'image/png');
+
+    } catch (err) {
+      console.error("Capture Error:", err);
+      originalSrcs.forEach(({ img, src }) => { img.src = src; });
+      alert("CORS security blocked the capture. Try a manual screenshot!");
+    }
   };
 
   const getAnimalArchetype = (slotId) => {
@@ -133,40 +205,37 @@ function App() {
 
     localStorage.setItem('northchild_saga', normalizedSaga);
     localStorage.setItem('northchild_pin', pin);
-    setIsAuthorized(true);
+    
+    // --- THE CINEMATIC FADE TRIGGER ---
+    setIsTransitioning(true); // Mounts the board silently in the background
+    
+    setTimeout(() => {
+      setIsAuthorized(true); // Officially grants access
+      setIsTransitioning(false); // Cleans up the transition state
+    }, 2000); // 2000ms = 2 seconds of fading
   };
 
   const saveToCloud = async (newData) => {
-    if (boardId) {
-      await supabase.from('boards').update({ slot_data: newData }).eq('id', boardId);
+    if (!boardId) return;
+
+    const { data, error } = await supabase
+      .from('boards')
+      .update({ slot_data: newData })
+      .eq('id', boardId)
+      .select();
+
+    if (error) {
+      console.error("Save Error:", error);
+      alert("Cloud Save Failed: Check your internet or Supabase connection.");
+    } else if (!data || data.length === 0) {
+      console.error("Save Blocked: 0 rows updated.");
+      alert("Save blocked! The database refused to update the row.");
     }
   };
 
   const handlePasteUrl = async (url) => {
     if (!url) return;
     const updatedData = { ...slotData, [activeSlot]: url };
-    setSlotData(updatedData);
-    saveToCloud(updatedData);
-    closeModal();
-  };
-
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchTerm) return;
-    const apiKey = 'AIzaSyCMtnzeQipM425CmnAgTGnTkyiEqm5TOaM'; 
-    const encodedTitle = encodeURIComponent(searchTerm);
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${encodedTitle}&maxResults=5&key=${apiKey}`;
-    try {
-      const res = await axios.get(url);
-      setSearchResults(res.data.items || []);
-    } catch (err) {
-      console.error("Search failed:", err);
-    }
-  };
-
-  const selectBook = async (book) => {
-    const coverUrl = book.volumeInfo.imageLinks?.thumbnail;
-    const updatedData = { ...slotData, [activeSlot]: coverUrl };
     setSlotData(updatedData);
     saveToCloud(updatedData);
     closeModal();
@@ -182,16 +251,15 @@ function App() {
 
   const closeModal = () => {
     setActiveSlot(null);
-    setSearchTerm('');
-    setSearchResults([]);
   };
   if (isLoading) return <div style={{background: '#1a1a1a', height: '100vh'}} />;
 
   const handleSlotClick = (id, animal) => {
     if (id.includes('slot-')) {
       const sacrificeKey = `${animal}-text`;
+      
+      // 1. Check if the path is open
       if (!slotData[sacrificeKey]) {
-        // Send the data needed for the three lines
         setRitualError({
           archetype: getAnimalArchetype(id),
           name: animal
@@ -199,38 +267,56 @@ function App() {
         setTimeout(() => setRitualError(null), 4000);
         return; 
       }
+
+      // 2. THE 15-BOOK LOCKOUT
+      // If the game is ready (15 books) AND the slot they clicked is empty, block it!
+      if (isEndgameReady && !slotData[id]) {
+        setRitualError({
+          isFullState: true // A custom flag so the toast knows what to display
+        });
+        setTimeout(() => setRitualError(null), 4000);
+        return;
+      }
     }
     setActiveSlot(id);
   };
 
+  // --- ENDGAME TRANSLATOR ---
+  const prepareFateData = () => {
+    const counts = { wolf: 0, orca: 0, serpent: 0, raven: 0, owl: 0, eagle: 0, elk: 0, bear: 0 };
+    const mapping = {
+      'Pack-Hunter': 'wolf', 'Deep-Kin': 'orca', 'Coil-Weaver': 'serpent', 'Omen-Bearer': 'raven',
+      'Night-Watcher': 'owl', 'Sky-Warden': 'eagle', 'Oath-Stag': 'elk', 'Winter-Keeper': 'bear'
+    };
+
+    Object.keys(slotData).forEach(key => {
+      if (key.includes('-slot-') && slotData[key]) {
+        const gameName = key.split('-slot-')[0]; 
+        const engineName = mapping[gameName];
+        if (engineName && counts[engineName] < 4) counts[engineName]++;
+      }
+    });
+
+    const hfCount = [0, 1, 2, 3, 4].filter(i => slotData[`highflame-${i}`]).length;
+    const gsCount = [0, 1, 2, 3, 4].filter(i => slotData[`gravesong-${i}`]).length;
+    return { counts, hfCount, gsCount };
+  };
+
+  const currentFateData = isEndgameModalOpen ? prepareFateData() : null;
+
+  const calculateFate = () => {
+    const { counts, hfCount, gsCount } = prepareFateData();
+    // Remember to import computeNorthchildResult at the top of App.jsx!
+    const result = computeNorthchildResult(counts, hfCount, gsCount);
+    setComputedResult(result);
+    setEndgameStep('result'); 
+  };
+
   return (
     <div className="app-container">
-      {!isAuthorized ? (
-        <div className="login-overlay">
-          <div className="login-content">
-            <h2 style={{fontFamily: 'Viking', color: '#4b576d', letterSpacing: '4px'}}>Identify Your Saga</h2>
-            <form onSubmit={identifySaga}>
-              <input 
-                placeholder="Saga Name (e.g. Bastiat)" 
-                value={sagaName}
-                onChange={(e) => setSagaName(e.target.value)}
-                style={{fontFamily: 'Norse'}}
-              />
-              <input 
-                type="password" 
-                maxLength="4" 
-                placeholder="4-Digit PIN" 
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                style={{fontFamily: 'Norse'}}
-              />
-              <button type="submit" className="clear-button" style={{marginTop: '20px', border: '1px solid #4b576d', color: '#4b576d'}}>
-                Begin the Journey
-              </button>
-            </form>
-          </div>
-        </div>
-      ) : (
+    
+      {/* 1. THE GAME BOARD (Renders when authorized OR during the fade transition) */}
+      {(isAuthorized || isTransitioning) && (
         <>
           <div className="game-card" style={{ backgroundImage: `url(${backgroundCard})` }}>
             {animals.map((animal, index) => (
@@ -257,39 +343,52 @@ function App() {
                     );
                   })}
                 </div>
+                
                 {/* Rune Clusters */}
-                  <div className="rune-cluster highflame-cluster">
-                    {[0, 1, 2, 3, 4].map(i => (
-                      <img 
-                        key={`hf-${i}`}
-                        src="/runes/highflame.svg" 
-                        className={`rune-icon ${slotData[`highflame-${i}`] ? 'active' : ''}`}
-                        onClick={() => toggleRune(`highflame-${i}`)}
-                        alt="Highflame Rune"
-                      />
-                    ))}
-                  </div>
+                <div className="rune-cluster highflame-cluster">
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <img 
+                      key={`hf-${i}`}
+                      src="/runes/highflame.svg" 
+                      className={`rune-icon ${slotData[`highflame-${i}`] ? 'active' : ''}`}
+                      onClick={() => toggleRune(`highflame-${i}`)}
+                      alt="Highflame Rune"
+                    />
+                  ))}
+                </div>
 
-                  <div className="rune-cluster gravesong-cluster">
-                    {[0, 1, 2, 3, 4].map(i => (
-                      <img 
-                        key={`gs-${i}`}
-                        src="/runes/gravesong.svg" 
-                        className={`rune-icon ${slotData[`gravesong-${i}`] ? 'active' : ''}`}
-                        onClick={() => toggleRune(`gravesong-${i}`)}
-                        alt="Gravesong Rune"
-                      />
-                    ))}
-                  </div>
+                <div className="rune-cluster gravesong-cluster">
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <img 
+                      key={`gs-${i}`}
+                      src="/runes/gravesong.svg" 
+                      className={`rune-icon ${slotData[`gravesong-${i}`] ? 'active' : ''}`}
+                      onClick={() => toggleRune(`gravesong-${i}`)}
+                      alt="Gravesong Rune"
+                    />
+                  ))}
+                </div>
               </React.Fragment>
             ))}
+
+            {/* THE NEW ON-BOARD ENDGAME TRIGGER */}
+            {isEndgameReady && (
+              <button 
+                className="seal-saga-btn"
+                onClick={() => {
+                  setEndgameStep('summary');
+                  setIsEndgameModalOpen(true);
+                }}
+              >
+                <img src={nameButtonImg} alt="Set Her Name" />
+              </button>
+            )}
           </div>
 
+          {/* RITUAL MODAL (For Pasting URLs) */}
           {activeSlot && (
             <div className="modal-overlay" onClick={closeModal}>
               <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                
-                {/* 1. THE RITUAL HEADER (The Text) */}
                 <div className="ritual-header">
                   {activeSlot.includes('-text') ? (
                     <>
@@ -301,22 +400,10 @@ function App() {
                     <>
                       <p className="ritual-command">Invoke the</p>
                       <h3 className="ritual-title">{activeSlot.split('-').slice(0, 2).join('-')}</h3>
-                      <p className="ritual-subtitle">Let Her Fate Be Guided</p>
+                      <p className="ritual-subtitle">And Let Her Fate Be Guided</p>
                     </>
                   )}
                 </div>
-
-                {/* 2. THE SEARCH TOOLS (The Missing Options) */}
-                <form onSubmit={handleSearch}>
-                  <input 
-                    value={searchTerm} 
-                    onChange={(e) => setSearchTerm(e.target.value)} 
-                    placeholder="Search Google Books..." 
-                    autoFocus
-                  />
-                </form>
-
-                <div className="modal-divider"><span>OR</span></div>
 
                 <input 
                   type="text"
@@ -325,18 +412,9 @@ function App() {
                   onChange={(e) => {
                     if (e.target.value.startsWith('http')) handlePasteUrl(e.target.value);
                   }}
+                  autoFocus 
                 />
 
-                {/* 3. THE RESULTS GRID */}
-                <div className="results-grid">
-                  {searchResults.map((book) => (
-                    <div key={book.id} className="result-item" onClick={() => selectBook(book)}>
-                      <img src={book.volumeInfo.imageLinks?.thumbnail || 'https://via.placeholder.com/128x192'} alt="cover" />
-                    </div>
-                  ))}
-                </div>
-
-                {/* 4. THE CLEAR BUTTON (Now with the Dashboard aesthetic) */}
                 {slotData[activeSlot] && (
                   <button onClick={clearSlot} className="clear-button">
                     Clear This Slot
@@ -346,25 +424,100 @@ function App() {
             </div>
           )}
 
+          {/* RITUAL ERROR TOAST */}
           {ritualError && (
             <div className="ritual-error-toast">
-              <p className="error-path">A book must first be sacrificed to the</p>
-              <h3 className="error-title">{ritualError.name}</h3>
-              <p className="error-must">to open the Path of the {ritualError.archetype}</p>
+              {ritualError.isFullState ? (
+                <>
+                  <p className="error-path">The fate is woven</p>
+                  <h3 className="error-title">15 OFFERINGS MADE</h3>
+                  <p className="error-must">Set Her Name or clear an existing book to alter the path</p>
+                </>
+              ) : (
+                <>
+                  <p className="error-path">A book must first be sacrificed to the</p>
+                  <h3 className="error-title">{ritualError.name}</h3>
+                  <p className="error-must">to open the Path of the {ritualError.archetype}</p>
+                </>
+              )}
             </div>
           )}
-        </>
-      )}
-       {isAuthorized && (
+
           <div className="saga-dashboard">
+            <button onClick={() => setIsChronicleOpen(true)} className="dashboard-link">
+              Open Chronicle
+            </button>
             <button onClick={shareBoard} className="dashboard-link">
               Copy Card Image
             </button>
             <button onClick={logout} className="dashboard-link">
-              Abandon this Saga
+              Abandon Saga
             </button>
           </div>
-        )}
+        </>
+      )}
+
+      {/* 2. THE THRESHOLD LOGIN (Renders if NOT fully authorized yet) */}
+      {!isAuthorized && (
+        <div className={`login-screen ${isTransitioning ? 'fade-out' : ''}`}>
+          <div className="login-container" style={{ backgroundImage: `url(${entranceBg})` }}>
+            <div className="login-form-area">
+              <form onSubmit={identifySaga}>
+                <input 
+                  placeholder="Player Name (ex: Bastiat)" 
+                  value={sagaName}
+                  onChange={(e) => setSagaName(e.target.value)}
+                />
+                <input 
+                  type="password" 
+                  maxLength="4" 
+                  placeholder="4-DIGIT PIN" 
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                />
+                <button type="submit" className="login-submit-btn">
+                  And thus the North shall know its Child
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. THE CHRONICLE MODAL INJECTION */}
+      {isChronicleOpen && (
+        <BroadcastModal 
+          slotId={chronicleSlotId}
+          selections={{
+            0: bearGlyph,
+            1: owlGlyph,
+            2: eagleGlyph,
+            3: serpentGlyph,
+            4: wolfGlyph,
+            5: stagGlyph,
+            6: orcaGlyph,
+            7: ravenGlyph
+          }}
+          slotData={slotData} 
+          animalData={animalData}
+          onClose={() => setIsChronicleOpen(false)}
+          onNavigate={(id) => setChronicleSlotId(id)}
+        />
+      )}
+
+      {/* 4. ENDGAME MODAL */}
+      <EndgameModal 
+        isOpen={isEndgameModalOpen}
+        step={endgameStep}
+        fateData={currentFateData}
+        computedResult={computedResult}
+        onCalculate={calculateFate}
+        onClose={() => {
+          setIsEndgameModalOpen(false);
+          setEndgameStep('summary'); 
+        }}
+      />
+
     </div>
   );
 }
