@@ -4,6 +4,7 @@ import './App.css';
 import backgroundCard from './ui/northchild-card.webp';
 import nameButtonImg from './ui/name_button.webp';
 import entranceBg from './ui/entrance_bg.webp';
+import gameplayGuideImg from './ui/gameplay.webp';
 import html2canvas from 'html2canvas';
 import BroadcastModal from './components/BroadcastModal';
 import EndgameModal from './components/EndgameModal';
@@ -524,7 +525,7 @@ function App() {
       {isGuideOpen && (
         <div className="guide-overlay" onClick={() => setIsGuideOpen(false)}>
           <div className="guide-content">
-            <img src="/ui/gameplay.webp" alt="Gameplay Guide" className="guide-image" />
+            <img src={gameplayGuideImg} alt="Gameplay Guide" className="guide-image" />
             <p className="guide-close-hint">Click anywhere to return to the Saga</p>
           </div>
         </div>
