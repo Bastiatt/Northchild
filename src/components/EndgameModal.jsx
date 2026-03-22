@@ -42,38 +42,49 @@ export default function EndgameModal({
   ];
 
   // --- THE BULLETPROOF COPY FUNCTION ---
-  const copyResultImage = () => {
+  // --- THE BULLETPROOF COPY FUNCTION (SAFARI ADAPTED) ---
+  const copyResultImage = async () => {
     if (!computedResult) return;
-    
-    const imgSrc = getResultImagePath(computedResult.winner.id, computedResult.variant);
-    const img = new Image();
-    img.crossOrigin = "anonymous"; // Prevents CORS taint
-    
-    img.onload = () => {
-      // Draw to a canvas to convert it into a universally accepted PNG format
-      const canvas = document.createElement('canvas');
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          alert("Could not process image for clipboard.");
-          return;
-        }
-        try {
-          const item = new ClipboardItem({ 'image/png': blob });
-          await navigator.clipboard.write([item]);
-          alert("The Chronicle has been copied to your clipboard!");
-        } catch (err) {
-          console.error("Clipboard error:", err);
-          alert("Your browser blocked clipboard access. You can still right-click or long-press the image to copy it.");
-        }
-      }, 'image/png');
-    };
-    
-    img.src = imgSrc;
+
+    try {
+      // THE SAFARI TRICK: Hand the clipboard an "IOU" Promise immediately
+      const clipboardItem = new ClipboardItem({
+        'image/png': new Promise((resolve, reject) => {
+          const imgSrc = getResultImagePath(computedResult.winner.id, computedResult.variant);
+          const img = new Image();
+          img.crossOrigin = "anonymous"; // Prevents CORS taint
+
+          img.onload = () => {
+            // Draw to a canvas to convert it into a universally accepted PNG format
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error("Canvas to Blob failed"));
+              }
+            }, 'image/png');
+          };
+
+          img.onerror = () => reject(new Error("Image failed to load"));
+          
+          img.src = imgSrc; // This actually triggers the load
+        })
+      });
+
+      // Execute the write command using the Promise-based item
+      await navigator.clipboard.write([clipboardItem]);
+      alert("The Chronicle has been copied to your clipboard!");
+
+    } catch (err) {
+      console.error("Clipboard error:", err);
+      alert("Apple security blocked the capture. Try a manual screenshot or long-press the image to save!");
+    }
   };
 
   return (

@@ -29,47 +29,63 @@ export default function BroadcastModal({ slotId, selections, slotData, animalDat
 
   const handleCapture = async () => {
     if (!chronicleRef.current) return;
-    const images = chronicleRef.current.querySelectorAll('img');
-    const originalSrcs = [];
 
     try {
-      const loadPromises = Array.from(images).map((img) => {
-        // Check if the image is external (ignores localhost and your live domain)
-        const isExternal = img.src.includes('http') && !img.src.includes(window.location.origin);
+      // THE SAFARI TRICK: Hand the clipboard an "IOU" Promise immediately
+      const clipboardItem = new ClipboardItem({
+        'image/png': new Promise(async (resolve, reject) => {
+          const images = chronicleRef.current.querySelectorAll('img');
+          const originalSrcs = [];
 
-        if (isExternal && !img.src.includes('wsrv.nl')) {
-          originalSrcs.push({ img, src: img.src });
-          return new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve;
-            img.src = `https://wsrv.nl/?url=${encodeURIComponent(img.src)}`;
-          });
-        }
-        return Promise.resolve();
+          try {
+            const loadPromises = Array.from(images).map((img) => {
+              // Check if the image is external (ignores localhost and your live domain)
+              const isExternal = img.src.includes('http') && !img.src.includes(window.location.origin);
+
+              if (isExternal && !img.src.includes('wsrv.nl')) {
+                originalSrcs.push({ img, src: img.src });
+                return new Promise((res) => {
+                  img.onload = res;
+                  img.onerror = res;
+                  img.src = `https://wsrv.nl/?url=${encodeURIComponent(img.src)}`;
+                });
+              }
+              return Promise.resolve();
+            });
+
+            await Promise.all(loadPromises);
+
+            const canvas = await html2canvas(chronicleRef.current, {
+              useCORS: true,
+              allowTaint: false,
+              backgroundColor: null,
+              scale: 2
+            });
+
+            originalSrcs.forEach(({ img, src }) => { img.src = src; });
+
+            canvas.toBlob((blob) => {
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error("Canvas to Blob failed"));
+              }
+            }, 'image/png');
+
+          } catch (innerErr) {
+            originalSrcs.forEach(({ img, src }) => { img.src = src; });
+            reject(innerErr);
+          }
+        })
       });
 
-      await Promise.all(loadPromises);
-
-      const canvas = await html2canvas(chronicleRef.current, {
-        useCORS: true,
-        allowTaint: false,
-        backgroundColor: null,
-        scale: 2
-      });
-
-      originalSrcs.forEach(({ img, src }) => { img.src = src; });
-
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const data = [new ClipboardItem({ "image/png": blob })];
-        await navigator.clipboard.write(data);
-        alert("The Destiny has been captured and copied.");
-      }, 'image/png');
+      // Execute the write command using the Promise-based item
+      await navigator.clipboard.write([clipboardItem]);
+      alert("The Destiny has been captured and copied.");
 
     } catch (err) {
       console.error("Capture Error:", err);
-      originalSrcs.forEach(({ img, src }) => { img.src = src; });
-      alert("CORS security blocked the capture. Try a manual screenshot!");
+      alert("Apple security blocked the capture. Try a manual screenshot or long-press the final image to save!");
     }
   };
 
